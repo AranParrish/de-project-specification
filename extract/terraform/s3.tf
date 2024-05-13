@@ -7,12 +7,8 @@ resource "aws_s3_bucket" "ingestion_s3" {
   }
 }
 
-resource "aws_s3_bucket_policy" "s3_ingestion_policy" {
-  bucket = aws_s3_bucket.example.id
-  policy = data.aws_iam_policy_document.s3_policy_doc.json
-}
 
-data "aws_iam_policy_document" "s3_policy_doc" {
+data "aws_iam_policy_document" "s3_policy_document" {
   statement {
     actions = [
       "s3:GetObject",
@@ -26,4 +22,9 @@ data "aws_iam_policy_document" "s3_policy_doc" {
       "${aws_s3_bucket.ingestion_s3.arn}/*",
     ]
   }
+}
+
+resource "aws_iam_policy" "s3_policy" {
+  name       = "s3_ingest_policy"
+  policy = aws_iam_policy_document.s3_policy_document.json
 }
