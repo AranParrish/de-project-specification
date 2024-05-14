@@ -18,6 +18,12 @@ terraform {
     }
 }
 
+
+resource "aws_sqs_queue" "queue" {
+  name = "totesys-queue"
+  visibility_timeout_seconds = 30
+}
+
 module "eventbridge" {
   source = "terraform-aws-modules/eventbridge/aws"
 
@@ -38,7 +44,7 @@ module "eventbridge" {
       },
       {
         name = "send-logs-to-cloudwatch"
-        arn  = aws_cloudwatch_log_stream.logs.arn
+        arn  = aws_cloudwatch_log_stream.extract_lambda_log_stream.arn
       }
     ]
   }
