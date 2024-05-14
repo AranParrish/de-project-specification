@@ -3,9 +3,9 @@ provider "aws" {
 
     default_tags {
       tags = {
-        Project = totesys-olap
-        Team = heritage
-        Phase = extract
+        Project = "Totesys Olap"
+        Team = "Heritage"
+        Phase = "Extract"
       }
     }
 }
