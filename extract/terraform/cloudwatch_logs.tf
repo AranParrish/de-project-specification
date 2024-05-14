@@ -7,5 +7,5 @@ resource "aws_cloudwatch_log_group" "extract_lambda_log_group" {
 # Create CloudWatch Logs stream
 resource "aws_cloudwatch_log_stream" "extract_lambda_log_stream" {
   name           = "extract-lambda-log-stream"
-  log_group_name = aws_cloudwatch_log_group.application_log_group.name
+  log_group_name = aws_cloudwatch_log_group.extract_lambda_log_group.name
 }

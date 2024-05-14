@@ -39,8 +39,4 @@ resource "aws_iam_role_policy_attachment" "extract_lambda_role_sns_policy" {
   policy_arn = aws_iam_policy.sns_policy.arn
 }
 
-# Attach totesys policy to extract_lambda role
-resource "aws_iam_role_policy_attachment" "extract_lambda_totesys_policy_attachment" {
-  role = aws_iam_role.extract_lambda_role.name
-  policy_arn = aws_iam_policy.totesys_policy.arn
-}
+

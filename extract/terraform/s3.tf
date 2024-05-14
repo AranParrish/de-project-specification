@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "ingestion_s3" {
-  bucket_prefix = "${vars.s3_ingestion_name}-"
+  bucket_prefix = "${var.s3_ingestion_name}-"
 
   tags = {
     Name        = "S3IngestionZone"
@@ -25,5 +25,5 @@ data "aws_iam_policy_document" "s3_policy_document" {
 
 resource "aws_iam_policy" "s3_policy" {
   name       = "s3_ingest_policy"
-  policy = aws_iam_policy_document.s3_policy_document.json
+  policy    = data.aws_iam_policy_document.s3_policy_document.json
 }

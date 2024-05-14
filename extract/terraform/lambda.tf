@@ -1,9 +1,9 @@
 resource "aws_lambda_function" "extract_lambda" {
     function_name = "${var.lambda_name}" # Need to provide main lambda function name
-    role = aws_iam_role.lambda_role.arn
-    filename=data.archive_file.lambda.output_path
-    source_code_hash = data.archive_file.lambda.output_base64sha256
-    handler = "reader.lambda_handler"
+    role = aws_iam_role.extract_lambda_role.arn
+    filename=data.archive_file.extract_lambda_zip.output_path
+    source_code_hash = data.archive_file.extract_lambda_zip.output_base64sha256
+    handler = "read.lambda_handler"
     runtime = "python3.12"
     timeout = 10
 
