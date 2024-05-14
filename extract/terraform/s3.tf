@@ -13,7 +13,6 @@ data "aws_iam_policy_document" "s3_policy_document" {
     actions = [
       "s3:GetObject",
       "s3:PutObject",
-      "s3:ListObject",
       "s3:ListBucket",
     ]
 
