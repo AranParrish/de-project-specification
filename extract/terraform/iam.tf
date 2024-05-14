@@ -1,6 +1,6 @@
 resource "aws_iam_role" "extract_lambda_role" {
     
-    name_prefix = "role-${var.lambda_name}"     # Need extract lambda name
+    name_prefix = "role-${vars.lambda_name}"     # Need extract lambda name
     assume_role_policy = <<EOF
     {
         "Version": "2012-10-17",
