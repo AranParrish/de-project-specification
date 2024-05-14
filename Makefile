@@ -59,26 +59,30 @@ coverage:
 	$(call execute_in_env, $(PIP) install coverage)
 
 ## Set up dev requirements (bandit, safety, black)
-dev-setup: bandit safety black coverage
+dev-setup: bandit safety black coverage		#Thought we had agreed to use both black and flake8?
 
 # Build / Run
 
 ## Run the security test (bandit + safety)
 security-test:
 	$(call execute_in_env, safety check -r ./requirements.txt)
+## I think there is another level of nesting with the folder structure, so the below line may need modifying
 	$(call execute_in_env, bandit -lll */*.py *c/*/*.py)
 
 ## Run the black code check
 run-black:
+## This will work for just extract.  Given it is in the root directory, do we want it to execute for all parts or have separate Makefiles?
 	$(call execute_in_env, black  ./extract/src/*.py ./extract/tests/*.py)
 
 
 ## Run the unit tests
 unit-test:
+## If we are using testdox as a group, then can run pytest accordingly
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -v)
 
 ## Run the coverage check
 check-coverage:
+## I don't think the path is correct for the below given the folder structure.
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=src test/)
 
 ## Run all checks
