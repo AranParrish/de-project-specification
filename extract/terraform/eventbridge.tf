@@ -1,18 +1,7 @@
 resource "aws_cloudwatch_event_rule" "extract_lambda_trigger" {
     name        = "extract_lambda_trigger"
     description = "Triggers the Lambda function when database is altered"
-    schedule_expression = "rate(30 minutes)"
-
-    event_pattern = <<PATTERN
-{
-    "source": [
-        "custom.myDatabase" 
-    ],
-    "detail-type": [
-        "Database Alteration"
-    ]
-}
-PATTERN
+    schedule_expression = "rate(5 minutes)"
 }
 # may change name depending on "source"
 resource "aws_cloudwatch_event_target" "target_lambda" {
@@ -72,13 +61,7 @@ POLICY
 
 #Create a new Event Rule
 resource "aws_cloudwatch_event_rule" "MyEventRule" {
-  schedule_expression = "rate(30 minutes)"
-  event_pattern = <<PATTERN
-{
-  "account": ["${data.aws_caller_identity.current.account_id}"],
-  "source": ["demo.logs"]
-}
-PATTERN
+  schedule_expression = "rate(5 minutes)" 
 }
 
 #Set the log group as a target for the Eventbridge rule
