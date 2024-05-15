@@ -1,6 +1,6 @@
 from extract.src.extract_lambda_formatter import format_data
 import pytest
-# Suggest adding a separate util function for the database connection (and import for tests)
+from extract.src.connection import connect_to_db
 
 @pytest.fixture(autouse=True)
 def run_db():

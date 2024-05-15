@@ -3,3 +3,5 @@ pytest
 pytest-cov
 pytest-testdox
 moto[s3]
+pg8000
+python-dotenv
