@@ -22,9 +22,9 @@ def read_updates_from_any_tb(tb_name):
     else:
         return f"{tb_name} is not a valid table name."
 
-# if __name__ == "__main__":
-#     read_history_data_from_address_tb()
-#     print(read_updates_from_address_tb('staff'))
-#     print(read_history_data_from_any_tb('currenc'))
+if __name__ == "__main__":
+    #read_history_data_from_address_tb()
+    print(read_updates_from_any_tb('staff'))
+    print(read_history_data_from_any_tb('currenc'))
 
                         
