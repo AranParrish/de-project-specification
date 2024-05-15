@@ -1,17 +1,7 @@
 resource "aws_cloudwatch_event_rule" "extract_lambda_trigger" {
     name        = "extract_lambda_trigger"
     description = "Triggers the Lambda function when database is altered"
-
-    event_pattern = <<PATTERN
-{
-    "source": [
-        "custom.myDatabase" 
-    ],
-    "detail-type": [
-        "Database Alteration"
-    ]
-}
-PATTERN
+    schedule_expression = "rate(5 minutes)"
 }
 # may change name depending on "source"
 resource "aws_cloudwatch_event_target" "target_lambda" {
@@ -25,7 +15,7 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
     action        = "lambda:InvokeFunction"
     function_name = aws_lambda_function.extract_lambda.function_name
     principal     = "events.amazonaws.com"
-    source_arn    = aws_cloudwatch_event_rule.extract_lambda_trigger.arn
+    source_arn    = aws_cloudwatch_event_rule.extract_lambda_trigger.arn # need to add the correct arn from the lambda function
 }
 
 #================================================================================
@@ -71,12 +61,7 @@ POLICY
 
 #Create a new Event Rule
 resource "aws_cloudwatch_event_rule" "MyEventRule" {
-  event_pattern = <<PATTERN
-{
-  "account": ["${data.aws_caller_identity.current.account_id}"],
-  "source": ["demo.logs"]
-}
-PATTERN
+  schedule_expression = "rate(5 minutes)" 
 }
 
 #Set the log group as a target for the Eventbridge rule
