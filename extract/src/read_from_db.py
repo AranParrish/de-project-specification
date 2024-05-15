@@ -9,12 +9,11 @@ def read_history_data_from_any_tb(tb_name):
     if tb_name in valid_tb_name:
         conn = connect_to_db()
         history_data = conn.run(f"""SELECT * FROM {tb_name};""")
-        print(history_data)
         return (history_data, conn)
     else:
         return f"{tb_name} is not a valid table name."
 
-def read_updates_from_address_tb(tb_name):
+def read_updates_from_any_tb(tb_name):
     valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty', 'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
     if tb_name in valid_tb_name:
         conn = connect_to_db()
