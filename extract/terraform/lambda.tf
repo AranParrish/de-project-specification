@@ -3,7 +3,7 @@ resource "aws_lambda_function" "extract_lambda" {
     role = aws_iam_role.extract_lambda_role.arn
     filename=data.archive_file.extract_lambda_zip.output_path
     source_code_hash = data.archive_file.extract_lambda_zip.output_base64sha256
-    handler = "read.lambda_handler"
+    handler = "extract_lambda.lambda_handler"
     runtime = "python3.12"
     timeout = 10
 
@@ -26,6 +26,6 @@ resource "aws_lambda_function" "extract_lambda" {
 # Need to update with lambda main function filename
 data "archive_file" "extract_lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/../src/read.py"
-  output_path = "${path.module}/../read.zip"
+  source_file = "${path.module}/../src/extract_lambda.py"
+  output_path = "${path.module}/../extract_lambda.zip"
 }
