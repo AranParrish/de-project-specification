@@ -15,7 +15,7 @@ resource "aws_lambda_permission" "allow_cloudwatch" {
     action        = "lambda:InvokeFunction"
     function_name = aws_lambda_function.extract_lambda.function_name
     principal     = "events.amazonaws.com"
-    source_arn    = aws_cloudwatch_event_rule.extract_lambda_trigger.arn
+    source_arn    = aws_cloudwatch_event_rule.extract_lambda_trigger.arn # need to add the correct arn from the lambda function
 }
 
 #================================================================================
