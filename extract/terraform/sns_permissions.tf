@@ -23,9 +23,3 @@ resource "aws_iam_policy" "sns_policy" {
     ]
   })
 }
-
-# Attach SNS policy to application role
-resource "aws_iam_role_policy_attachment" "application_role_sns_policy" {
-  policy_arn = aws_iam_policy.sns_policy.arn
-  role       = aws_iam_role.application_role.name
-}
