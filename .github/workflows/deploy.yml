@@ -18,6 +18,7 @@ env:
 jobs:
   run-tests:
     name: run-tests
+    environment: dev
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
