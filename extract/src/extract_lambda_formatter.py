@@ -4,19 +4,23 @@ def format_data(result: list, db: str) -> dict | list:
     in a format suitable for writing to a JSON file.
     For a single row query result, returns as a dictionary of key-value pairs
     with column headings as the keys.
-    For multiple row query results, returns a list of dictionary key-value pairs.
+    For multiple row query results, returns a list of dictionary key-value
+    pairs.
     Args:
         result:
             list representing the output from a pg8000 query of a database
         db:
-            str representing the database connection used to return the query result
+            str representing the database connection used to return the query
+            result
             (required to get column headings)
-    
+
     Returns:
         Single dictionary:
-            For single row query result with key-value pairs using table column headings as keys
+            For single row query result with key-value pairs
+            using table column headings as keys
         List of dictionaries:
-            For multiple row query results with key-value pairs in each dictionary using column headings as keys
+            For multiple row query results with key-value pairs
+            in each dictionary using column headings as keys
     """
     col_headers = [col["name"] for col in db.columns]
     if len(result) == 1:
