@@ -75,7 +75,7 @@ def lambda_handler(event, context):
         bucket_content = s3_client.list_objects_v2(Bucket = BUCKET_NAME)
         tables = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
         'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
-        if len(bucket_content['Contents']) == 0:
+        if bucket_content['KeyCount'] == 0:
             for table in tables:
                 result = read_history_data_from_any_tb(table)
                 write_data(s3_client,BUCKET_NAME, result, table)
@@ -90,9 +90,6 @@ def lambda_handler(event, context):
     except Exception as e:
         logger.error(e)
                     
-
-    
-
         
 
 
