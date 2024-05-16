@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def connect_to_db():   
+def connect_to_db():
     """This function will connect to the totesys database and return the
     connection"""
     conn = None
-    conn = Connection(username=username, password=password, database=database,
-                      host=host, port=port)
+    conn = Connection(username=username, password=password,
+                      database=database, host=host, port=port)
     if conn:
         return conn
     else:
