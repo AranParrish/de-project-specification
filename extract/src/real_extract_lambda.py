@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from pg8000.native import Connection
 import json
-
+from datetime import datetime
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -24,7 +24,8 @@ def connect_to_db():
 # function that reads entire contents of table at current time
 
 def read_history_data_from_any_tb(tb_name):
-    valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty', 'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
+    valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
+    'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
     if tb_name in valid_tb_name:
         conn = connect_to_db()
         history_data = conn.run(f"""SELECT * FROM {tb_name};""")
@@ -36,7 +37,8 @@ def read_history_data_from_any_tb(tb_name):
         return f"{tb_name} is not a valid table name."
 
 def read_updates_from_any_tb(tb_name):
-    valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty', 'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
+    valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
+    'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
     if tb_name in valid_tb_name:
         conn = connect_to_db()
         updates = conn.run(f"""SELECT * FROM {tb_name} WHERE  now() - last_updated < interval '20 minutes';""")
@@ -47,17 +49,43 @@ def read_updates_from_any_tb(tb_name):
     else:
         return f"{tb_name} is not a valid table name."
 
+def write_data(s3_client: str, formatted_data: list, table: str) -> json:
+    with open(f'{table}-{datetime.now()}.json', 'w') as file:
+        json.dump(formatted_data, file)
+        key = f'{table}-{datetime.now()}-snapshot'
+
+        try:
+            s3_client.put_object(Bucket=BUCKET_NAME, Key=key, Body=file)
+            logger.info(f'Data from {table} at {datetime.now()} written to S3 successfully.')
+            return True
+        except ClientError as c:
+            logger.error(f"Boto3 ClientError: {str(c)}")
+            return False
+
 
 
 def lambda_handler(event, context):
     """Main handler - event is empty."""
+
     try:
+        BUCKET_NAME = os.environ['ingestion_zone_bucket']
         s3_client = boto3.client("s3")
-        tables = ['sales_order', 'design', 'currency', 'staff', 'counterparty', 'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
-        for table in tables:
-            result = read_history_data_from_any_tb(table)
-            with open(f'{table}.json', 'w') as file:
-                json.dump(result, file)
+        bucket_content = s3_client.list_objects_v2(Bucket = BUCKET_NAME)
+        tables = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
+        'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
+        if len(bucket_content['Contents']) == 0:
+            for table in tables:
+                result = read_history_data_from_any_tb(table)
+                write_data(s3_client, result, table)
+        else:
+            for table in tables:
+                result = read_updates_from_any_tb(table)
+                if result:
+                    write_data(s3_client, result, table)
+                else:
+                    log.info(f'{table} has no new data at {datetime.now()}.')
+
+    
 
         
 
