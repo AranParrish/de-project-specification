@@ -7,7 +7,7 @@ resource "aws_sns_topic" "extract_lambda_notifications" {
 resource "aws_sns_topic_subscription" "email_subscription" {
   topic_arn = aws_sns_topic.extract_lambda_notifications.arn
   protocol  = "email"
-  endpoint  = "your-email@example.com"  # replace with relevant email address
+  endpoint  = "ellybalci@gmail.com"  # replace with relevant email address
 }
 
 # Create CloudWatch alarm for extract_lambda errors

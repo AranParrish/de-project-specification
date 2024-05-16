@@ -1,7 +1,7 @@
 resource "aws_cloudwatch_event_rule" "extract_lambda_trigger" {
     name        = "extract_lambda_trigger"
     description = "Triggers the Lambda function when database is altered"
-    schedule_expression = "rate(30 minutes)"
+    schedule_expression = "rate(1 minute)"
 }
 # may change name depending on "source"
 resource "aws_cloudwatch_event_target" "target_lambda" {
@@ -61,7 +61,7 @@ POLICY
 
 #Create a new Event Rule
 resource "aws_cloudwatch_event_rule" "MyEventRule" {
-  schedule_expression = "rate(30 minutes)" 
+  schedule_expression = "rate(1 minute)" 
 }
 
 #Set the log group as a target for the Eventbridge rule
