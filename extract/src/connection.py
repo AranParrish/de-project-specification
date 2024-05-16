@@ -18,7 +18,7 @@ def connect_to_db():
     """This function will connect to the totesys
     database and return the connection"""
     conn = None
-    conn = Connection(username=username, password=password,
+    conn = Connection(user=username, password=password,
                       database=database,
                       host=host,
                       port=port)
