@@ -25,8 +25,7 @@ resource "aws_lambda_function" "extract_lambda" {
 }
 resource "aws_lambda_layer_version" "python_dotenv_layer" {
   layer_name = "python_dotenv_layer"
-  compatible_runtimes = ["python3.12"]
-  filename = data.archive_file.extract_lambda_zip.output_path
+  filename = data.archive_file.layer.output_path
   
 }
 

@@ -2,7 +2,7 @@
 resource "aws_cloudwatch_event_rule" "extract_lambda_trigger" {
     name        = "extract_lambda_trigger"
     description = "Triggers the extract_lambda function"
-    schedule_expression = "rate(20 minutes)"
+    schedule_expression = "rate(1 minute)"
 }
 
 # Set the EventBridge trigger to the extract_lambda target
