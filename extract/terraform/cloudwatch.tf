@@ -1,7 +1,6 @@
 # Create IAM policy for CloudWatch Logs permissions
 resource "aws_iam_policy" "cloudwatch_logs_policy" {
   name        = "CloudWatchLogsPermissions"
-  path        = "/"
   description = "IAM policy for CloudWatch Logs permissions"
 
   policy = jsonencode({
@@ -22,4 +21,16 @@ resource "aws_iam_policy" "cloudwatch_logs_policy" {
       }
     ]
   })
+}
+
+# Create CloudWatch Logs group
+resource "aws_cloudwatch_log_group" "extract_lambda_log_group" {
+  name              = "/aws/extract_lambda/logs"
+  retention_in_days = 30
+}
+
+# Create CloudWatch Logs stream
+resource "aws_cloudwatch_log_stream" "extract_lambda_log_stream" {
+  name           = "extract-lambda-log-stream"
+  log_group_name = aws_cloudwatch_log_group.extract_lambda_log_group.name
 }
