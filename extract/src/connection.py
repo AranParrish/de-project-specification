@@ -19,7 +19,9 @@ def connect_to_db():
     database and return the connection"""
     conn = None
     conn = Connection(username=username, password=password,
-                      database=database, host=host, port=port)
+                      database=database,
+                      host=host,
+                      port=port)
     if conn:
         return conn
     else:
