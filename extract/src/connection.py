@@ -15,8 +15,8 @@ logger.setLevel(logging.INFO)
 
 
 def connect_to_db():
-    """This function will connect to the totesys database and return the
-    connection"""
+    """This function will connect to the totesys
+    database and return the connection"""
     conn = None
     conn = Connection(username=username, password=password,
                       database=database, host=host, port=port)
