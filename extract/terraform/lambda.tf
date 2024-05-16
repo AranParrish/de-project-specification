@@ -3,6 +3,7 @@ resource "aws_lambda_function" "extract_lambda" {
     role = aws_iam_role.extract_lambda_role.arn
     filename=data.archive_file.extract_lambda_zip.output_path
     source_code_hash = data.archive_file.extract_lambda_zip.output_base64sha256
+    layers = [aws_lambda_layer_version.python_dotenv_layer.arn]
     handler = "extract_lambda.lambda_handler"
     runtime = "python3.12"
     timeout = 10
@@ -22,10 +23,22 @@ resource "aws_lambda_function" "extract_lambda" {
   }
 
 }
+resource "aws_lambda_layer_version" "python_dotenv_layer" {
+  layer_name = "python_dotenv_layer"
+  compatible_runtimes = ["python3.12"]
+  filename = data.archive_file.extract_lambda_zip.output_path
+  
+}
 
 # Need to update with lambda main function filename
 data "archive_file" "extract_lambda_zip" {
   type        = "zip"
   source_file = "${path.module}/../src/extract_lambda.py"
   output_path = "${path.module}/../extract_lambda.zip"
+}
+
+data "archive_file" "layer" {
+  type = "zip"
+  source_dir = "${path.module}/../layer/"
+  output_path = "${path.module}/../layer.zip"
 }
