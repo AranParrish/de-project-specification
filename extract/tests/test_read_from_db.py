@@ -1,12 +1,15 @@
-from extract.src.read_from_db import read_history_data_from_any_tb, read_updates_from_any_tb
+from extract.src.read_from_db import read_history_data_from_any_tb, \
+    read_updates_from_any_tb
 from pg8000.native import Connection
 
 
 class TestReadHistoryDataFromDB:
 
     def test_func_returns_results_when_valid_table_name_passed(self):
-        valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
-                         'address', 'department', 'purchase_order', 'payment_type',
+        valid_tb_name = ['sales_order', 'design', 'currency', 'staff',
+                         'counterparty',
+                         'address', 'department', 'purchase_order',
+                         'payment_type',
                          'payment', 'transaction']
 
         for table_name in valid_tb_name:
@@ -25,8 +28,9 @@ class TestReadHistoryDataFromDB:
 class TestReadUpdateDataFromDB:
 
     def test_func_returns_updated_results_when_valid_table_name_passed(self):
-        valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
-                         'address', 'department', 'purchase_order', 'payment_type',
+        valid_tb_name = ['sales_order', 'design', 'currency', 'staff',
+                         'counterparty', 'address', 'department',
+                         'purchase_order', 'payment_type',
                          'payment', 'transaction']
         for table_name in valid_tb_name:
             results = read_updates_from_any_tb(table_name)
