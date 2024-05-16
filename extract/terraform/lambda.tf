@@ -19,6 +19,11 @@ resource "aws_lambda_function" "extract_lambda" {
   environment {
     variables = {
       ingestion_zone_bucket = resource.aws_s3_bucket.ingestion_s3.bucket
+      USERNAME = "${var.db_username}"
+      PASSWORD = "${var.db_password}"
+      DATABASE = "${var.db_database}"
+      HOST = "${var.db_host}"
+      PORT = "${var.db_port}"
     }
   }
 
