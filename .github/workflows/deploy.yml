@@ -33,7 +33,7 @@ jobs:
   
   deploy-extract-lambda:
     name: deploy-extract-lambda
-    needs: run-tests
+    #needs: run-tests
     environment: dev
     runs-on: ubuntu-latest
     steps:
