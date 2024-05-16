@@ -8,11 +8,11 @@ on:
     branches:
       - main
   env:
-    USERNAME=${{ secrets.USERNAME}}
-    PASSWORD=${{ secrets.PASSWORD }}
-    DATABASE=${{ vars.DB_NAME }}
-    HOST=${{ vars.DB_HOST }}
-    PORT=${{ vars.DB_PORT }}
+    USERNAME:${{ secrets.USERNAME}}
+    PASSWORD:${{ secrets.PASSWORD }}
+    DATABASE:${{ vars.DB_NAME }}
+    HOST:${{ vars.DB_HOST }}
+    PORT:${{ vars.DB_PORT }}
 
 
 jobs:
