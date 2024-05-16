@@ -7,6 +7,13 @@ on:
   pull_request:
     branches:
       - main
+  env:
+    USERNAME=${{ secrets.USERNAME}}
+    PASSWORD=${{ secrets.PASSWORD }}
+    DATABASE=${{ vars.DB_NAME }}
+    HOST=${{ vars.DB_HOST }}
+    PORT=${{ vars.DB_PORT }}
+
 
 jobs:
   run-tests:
