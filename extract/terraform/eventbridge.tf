@@ -26,37 +26,37 @@ resource "aws_cloudwatch_log_group" "MyLogGroup" {
   name_prefix = "/aws/events/terraform"
 }
 
-# Create a Log Policy to allow Cloudwatch to Create log streams and put logs
-resource "aws_cloudwatch_log_resource_policy" "MyCloudWatchLogPolicy" {
-  policy_name     = "Terraform-CloudWatchLogPolicy-${data.aws_caller_identity.current.account_id}"
-  policy_document = <<POLICY
-{
-  "Version": "2012-10-17",
-  "Id": "CWLogsPolicy",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": [ 
-          "events.amazonaws.com",
-          "delivery.logs.amazonaws.com"
-          ]
-      },
-      "Action": [
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-        ],
-      "Resource": "${aws_cloudwatch_log_group.MyLogGroup.arn}",
-      "Condition": {
-        "ArnEquals": {
-          "aws:SourceArn": "${aws_cloudwatch_event_rule.MyEventRule.arn}"
-        }
-      }
-    }
-  ]
-}
-POLICY  
-}
+# # Create a Log Policy to allow Cloudwatch to create log streams and put logs
+# resource "aws_cloudwatch_log_resource_policy" "MyCloudWatchLogPolicy" {
+#   policy_name     = "EventBridge-CloudWatchLogPolicy"
+#   policy_document = <<POLICY
+# {
+#   "Version": "2012-10-17",
+#   "Id": "CWLogsPolicy",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Principal": {
+#         "Service": [ 
+#           "events.amazonaws.com",
+#           "delivery.logs.amazonaws.com"
+#           ]
+#       },
+#       "Action": [
+#         "logs:CreateLogStream",
+#         "logs:PutLogEvents"
+#         ],
+#       "Resource": "${aws_cloudwatch_log_group.MyLogGroup.arn}",
+#       "Condition": {
+#         "ArnEquals": {
+#           "aws:SourceArn": "${aws_cloudwatch_event_rule.extract_lambda_trigger.arn}"
+#         }
+#       }
+#     }
+#   ]
+# }
+# POLICY  
+# }
 
 # #Create a new Event Rule
 # resource "aws_cloudwatch_event_rule" "MyEventRule" {
