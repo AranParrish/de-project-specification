@@ -1,3 +1,5 @@
+# Creates and configures S3 buckets for ingested data
+
 resource "aws_s3_bucket" "ingestion_s3" {
   bucket_prefix = "${var.s3_ingestion_name}-"
 

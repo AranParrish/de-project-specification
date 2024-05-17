@@ -1,3 +1,5 @@
+# Sets up SNS topics and subscriptions for notifications and alerts
+
 # Create IAM policy for SNS permissions
 resource "aws_iam_policy" "sns_policy" {
   name        = "SNSPermissions"
@@ -32,7 +34,7 @@ resource "aws_sns_topic" "extract_lambda_notifications" {
 resource "aws_sns_topic_subscription" "email_subscription" {
   topic_arn = aws_sns_topic.extract_lambda_notifications.arn
   protocol  = "email"
-  endpoint  = "ellybalci@gmail.com"  # replace with relevant email address
+  endpoint  = "ellybalci@gmail.com"
 }
 
 # Create CloudWatch alarm for extract_lambda errors

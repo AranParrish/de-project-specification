@@ -1,3 +1,5 @@
+# Defines IAM policies and CloudWatch log groups/streams to manage and monitor logs for Lambda functions
+
 # Create IAM policy for CloudWatch Logs permissions
 resource "aws_iam_policy" "cloudwatch_logs_policy" {
   name        = "CloudWatchLogsPermissions"

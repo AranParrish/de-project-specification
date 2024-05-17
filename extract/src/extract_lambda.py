@@ -11,8 +11,8 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# can set the environment variables in the aws_lambda_function resource in lambda.tf except for password 
-def connect_to_db():   
+# Connects to the totesys database using environment variables for credentials
+def connect_to_db(): 
     """This function will connect to the totesys database and return the connection"""
     secret_name = "db_creds"
     region_name = "eu-west-2"
@@ -43,9 +43,8 @@ def connect_to_db():
     port = secret['port']
     return Connection(username, password = password, database = database, host = host, port = port)
 
-# function that reads entire contents of table at current time
-
-def read_history_data_from_any_tb(tb_name):
+# Reads all data from a specified table in the database
+def read_history_data_from_any_tb(tb_name): 
     valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
     'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
     if tb_name in valid_tb_name:
@@ -58,8 +57,9 @@ def read_history_data_from_any_tb(tb_name):
         return [dict(zip(col_headers, data)) for data in history_data]
     else:
         return f"{tb_name} is not a valid table name."
-
-def read_updates_from_any_tb(tb_name):
+    
+# Reads the data updated within the last 20 minutes from a specified table
+def read_updates_from_any_tb(tb_name): 
     valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
     'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
     if tb_name in valid_tb_name:
@@ -73,7 +73,8 @@ def read_updates_from_any_tb(tb_name):
     else:
         return f"{tb_name} is not a valid table name."
 
-def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: str) -> json:
+# Writes the provided data to a JSON file and uploads it to an S3 bucket
+def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: str) -> json: 
         file = json.dumps(formatted_data, default=str)
         key = f'{datetime.now().date()}/{table}-{datetime.now().time()}.json'
 
@@ -84,6 +85,7 @@ def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: st
         except ClientError as c:
             logger.error(f"Boto3 ClientError: {str(c)}")
             return False
+
 
 
 def lambda_handler(event, context):
@@ -115,9 +117,6 @@ def lambda_handler(event, context):
     except ClientError as e:
         logger.error(e)
                     
-
-    
-
         
 
 
