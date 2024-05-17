@@ -92,8 +92,7 @@ def lambda_handler(event, context):
     """Main handler - event is empty."""
 
     try:
-        #BUCKET_NAME = os.environ['ingestion_zone_bucket']
-        BUCKET_NAME = 'de-heritage-ingestion'
+        BUCKET_NAME = os.environ['ingestion_zone_bucket']
         s3_client = boto3.client("s3")
         bucket_content = s3_client.list_objects_v2(Bucket = BUCKET_NAME)
         tables = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
@@ -118,8 +117,6 @@ def lambda_handler(event, context):
         logger.error(e)
                     
         
-
-
 
 
 
