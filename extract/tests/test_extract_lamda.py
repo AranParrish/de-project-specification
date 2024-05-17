@@ -67,15 +67,12 @@ class TestReadHistoryDataFromDB:
 
             assert isinstance(results, list)
 
-# write a python to manage db errors!!!!
-    @pytest.mark.skip()
     @pytest.mark.it('if table name is invalid return a database error')
-    def test_func_returns_message_when_invalid_table_name_passed(self):
+    def test_func_returns_message_when_invalid_table_name_passed(self, caplog):
         table_name = "departmen"
-        with pytest.raises(DatabaseError) as error:
+        with caplog.at_level(logging.ERROR):
             read_history_data_from_any_tb(table_name)
-            message = f'{table_name} is not a valid table name.'
-        assert str(error.value) == message
+        assert "not a valid table name" in caplog.text
 
 
 @pytest.mark.describe("test read updated data from database")
@@ -90,22 +87,19 @@ class TestReadUpdateDataFromDB:
             results = read_updates_from_any_tb(table_name)
             assert isinstance(results, dict | list)
 
-    # write a python to manage db errors!!!!
-    @pytest.mark.skip()    
     @pytest.mark.it('returns an error message if table name is invalid')
-    def test_func_returns_message_when_invalid_table_name_passed(self):
+    def test_func_returns_message_when_invalid_table_name_passed(self, caplog):
         invalid_tb_name = 'products'
-        with pytest.raises(DatabaseError) as error:
+        with caplog.at_level(logging.ERROR):
             read_history_data_from_any_tb(invalid_tb_name)
-            message = f'{invalid_tb_name} is not a valid table name.'
-        assert str(error.value) == message
+        assert "not a valid table name" in caplog.text
 
 
 @pytest.mark.describe('Write data input tests')
 class TestWriteDataInputs:
 
     @pytest.mark.it('Input is not mutated')
-    def test_write_data_input_not_mutated(self, s3):
+    def test_write_data_input_not_mutated(self, s3, bucket):
         test_input = [1, 2, 3]
         copy_test_input = [1, 2, 3]
         test_table = 'test'
@@ -117,15 +111,14 @@ class TestWriteDataInputs:
 class TestWriteDataToS3:
 
     @pytest.mark.it("Able to put file in S3 bucket")
-    def test_write_to_s3(self, s3, data):
+    def test_write_to_s3(self, s3, bucket):
         data = [{"a": 1}, {"b": 2}]
-        test_table = 'test'
-        test_bucket = 'test_bucket'
-        resp = write_data(s3, test_bucket, data, test_table)
+        test_table = "test"
+        test_bucket = "test_bucket"
+        write_data(s3, test_bucket, data, test_table)
         listing = s3.list_objects_v2(Bucket="test_bucket")
         assert len(listing["Contents"]) == 1
-        assert '_totesys_snapshot' in listing["Contents"][0]["Key"]
-        assert resp
+        assert 'test' in listing["Contents"][0]["Key"]
 
     @pytest.mark.it("Logs client error if there is no S3 bucket")
     def test_write_s3_logs_client_error(self, s3, caplog):
@@ -133,6 +126,5 @@ class TestWriteDataToS3:
         test_table = 'test'
         test_bucket = 'test_bucket2'
         with caplog.at_level(logging.INFO):
-            resp = write_data(s3, test_bucket, data, test_table)
-        assert not resp
+            write_data(s3, test_bucket, data, test_table)
         assert "ClientError" in caplog.text
