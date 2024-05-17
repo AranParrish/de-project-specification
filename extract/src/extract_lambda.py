@@ -32,9 +32,6 @@ def connect_to_db():
         raise e
 
     secret = get_secret_value_response['SecretString']
-    print(secret)
-    print(type(secret))
-    # Your code goes here.
     secret = json.loads(secret)
     username = secret['username']
     password = secret['password']
@@ -97,7 +94,7 @@ def lambda_handler(event, context):
         bucket_content = s3_client.list_objects_v2(Bucket = BUCKET_NAME)
         tables = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
         'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
-        print(bucket_content)
+
         if bucket_content['KeyCount'] == 0:
             for table in tables:
                 print("reading data start")
