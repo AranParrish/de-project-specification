@@ -13,7 +13,7 @@ port = os.environ['PORT']
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
+# Handles the database connection
 def connect_to_db():
     """This function will connect to the totesys
     database and return the connection"""

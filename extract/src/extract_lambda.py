@@ -11,8 +11,8 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# can set the environment variables in the aws_lambda_function resource in lambda.tf except for password 
-def connect_to_db():   
+# Connects to the totesys database using environment variables for credentials
+def connect_to_db(): 
     """This function will connect to the totesys database and return the connection"""
     username = os.environ['USERNAME']
     password = os.environ['PASSWORD']
@@ -21,9 +21,8 @@ def connect_to_db():
     port = os.environ['PORT']
     return Connection(username, password = password, database = database, host = host, port = port)
 
-# function that reads entire contents of table at current time
-
-def read_history_data_from_any_tb(tb_name):
+# Reads all data from a specified table in the database
+def read_history_data_from_any_tb(tb_name): 
     valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
     'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
     if tb_name in valid_tb_name:
@@ -36,8 +35,9 @@ def read_history_data_from_any_tb(tb_name):
         return [dict(zip(col_headers, data)) for data in history_data]
     else:
         return f"{tb_name} is not a valid table name."
-
-def read_updates_from_any_tb(tb_name):
+    
+# Reads the data updated within the last 20 minutes from a specified table
+def read_updates_from_any_tb(tb_name): 
     valid_tb_name = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
     'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
     if tb_name in valid_tb_name:
@@ -51,7 +51,8 @@ def read_updates_from_any_tb(tb_name):
     else:
         return f"{tb_name} is not a valid table name."
 
-def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: str) -> json:
+# Writes the provided data to a JSON file and uploads it to an S3 bucket
+def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: str) -> json: 
     with open(f'{table}-{datetime.now()}.json', 'w') as file:
         json.dump(formatted_data, file)
         key = f'{table}-{datetime.now()}-snapshot'
@@ -65,7 +66,7 @@ def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: st
             return False
 
 
-
+# Main handler for the Lambda function that orchestrates the data extraction and upload process based on whether the S3 bucket is empty or already contains data
 def lambda_handler(event, context):
     """Main handler - event is empty."""
 
@@ -89,14 +90,3 @@ def lambda_handler(event, context):
     
     except Exception as e:
         logger.error(e)
-                    
-        
-
-
-
-
-
-
-        
-
-
