@@ -1,6 +1,4 @@
-resource "aws_secretsmanager_secret" "db_creds" {
-  name = "db_creds"
-}
+
 
 data "aws_iam_policy_document" "sm_policy_doc" {
     statement {
@@ -40,6 +38,6 @@ data "aws_iam_policy_document" "sm_policy_doc" {
 
 
 resource "aws_secretsmanager_secret_policy" "sm_policy" {
-  secret_arn = aws_secretsmanager_secret.db_creds.arn
+  secret_arn = "arn:aws:secretsmanager:eu-west-2:471112784619:secret:db_creds-t5KpJ3"
   policy     = data.aws_iam_policy_document.sm_policy_doc.json
 }
