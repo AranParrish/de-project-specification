@@ -13,15 +13,11 @@ resource "aws_s3_bucket" "ingestion_s3" {
 data "aws_iam_policy_document" "s3_policy_document" {
   statement {
     actions = [
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:ListBucket",
+      "s3:*",
+      "s3-object-lambda:*",
     ]
 
-    resources = [
-      aws_s3_bucket.ingestion_s3.arn,
-      "${aws_s3_bucket.ingestion_s3.arn}/*",
-    ]
+    resources =  ["*"]
   }
 }
 
