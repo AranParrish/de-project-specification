@@ -13,6 +13,12 @@ jobs:
     name: run-tests
     environment: dev
     runs-on: ubuntu-latest
+    env:
+        USERNAME:${{ secrets.USERNAME}}
+        PASSWORD:${{ secrets.PASSWORD }}
+        DATABASE:${{ vars.DB_NAME }}
+        HOST:${{ vars.DB_HOST }}
+        PORT:${{ vars.DB_PORT }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -27,7 +33,7 @@ jobs:
   
   deploy-extract-lambda:
     name: deploy-extract-lambda
-    #needs: run-tests
+    needs: run-tests
     environment: dev
     runs-on: ubuntu-latest
     steps:
