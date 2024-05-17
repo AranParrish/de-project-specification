@@ -92,6 +92,7 @@ def lambda_handler(event, context):
         BUCKET_NAME = os.environ['ingestion_zone_bucket']
         s3_client = boto3.client("s3")
         bucket_content = s3_client.list_objects_v2(Bucket = BUCKET_NAME)
+        print(bucket_content['KeyCount'])
         tables = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
         'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
 
