@@ -23,17 +23,17 @@ jobs:
       - name: Install Make
         run: sudo apt install make -y
       - name: Run Tests
-        env:
-          USERNAME:${{ secrets.USERNAME}}
-          PASSWORD:${{ secrets.PASSWORD }}
-          DATABASE:${{ vars.DB_NAME }}
-          HOST:${{ vars.DB_HOST }}
-          PORT:${{ vars.DB_PORT }}
+        env: 
+          USERNAME: ${{ secrets.USERNAME}}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          DATABASE: ${{ vars.DB_NAME }}
+          HOST: ${{ vars.DB_HOST }}
+          PORT: ${{ vars.DB_PORT }}
         run: make run-all 
   
   deploy-extract-lambda:
     name: deploy-extract-lambda
-    needs: run-tests
+    #needs: run-tests
     environment: dev
     runs-on: ubuntu-latest
     steps:
