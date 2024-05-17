@@ -13,12 +13,6 @@ jobs:
     name: run-tests
     environment: dev
     runs-on: ubuntu-latest
-    env:
-        USERNAME:${{ secrets.USERNAME}}
-        PASSWORD:${{ secrets.PASSWORD }}
-        DATABASE:${{ vars.DB_NAME }}
-        HOST:${{ vars.DB_HOST }}
-        PORT:${{ vars.DB_PORT }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -29,6 +23,12 @@ jobs:
       - name: Install Make
         run: sudo apt install make -y
       - name: Run Tests
+        env:
+          USERNAME:${{ secrets.USERNAME}}
+          PASSWORD:${{ secrets.PASSWORD }}
+          DATABASE:${{ vars.DB_NAME }}
+          HOST:${{ vars.DB_HOST }}
+          PORT:${{ vars.DB_PORT }}
         run: make run-all 
   
   deploy-extract-lambda:
