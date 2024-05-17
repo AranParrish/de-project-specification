@@ -32,6 +32,7 @@ def connect_to_db():
         raise e
 
     secret = get_secret_value_response['SecretString']
+    print(secret)
     secret = json.loads(secret)
     username = secret['username']
     password = secret['password']
