@@ -78,7 +78,7 @@ extract-unit-test:
 
 ## Run the coverage check
 extract-check-coverage:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=src ./extract/tests/)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=./extract/src ./extract/tests/)
 
 ## Run all checks
 extract-run-checks: extract-security-test extract-run-black extract-unit-test extract-check-coverage
