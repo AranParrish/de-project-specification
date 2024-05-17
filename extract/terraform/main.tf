@@ -1,3 +1,5 @@
+# Configures the AWS provider and remote state storage
+
 provider "aws" {
     region="eu-west-2"
 
@@ -19,7 +21,7 @@ terraform {
 }
 
 
-resource "aws_sqs_queue" "queue" {
-  name = "totesys-queue"
-  visibility_timeout_seconds = 30
-}
+# resource "aws_sqs_queue" "queue" {
+#   name = "totesys-queue"
+#   visibility_timeout_seconds = 30
+# }

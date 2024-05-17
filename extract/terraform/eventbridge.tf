@@ -1,3 +1,5 @@
+# Creates EventBridge rules and targets to schedule Lambda function executions
+
 # EventBridge rule to trigger the lambda function on a 20 minute schedule
 resource "aws_cloudwatch_event_rule" "extract_lambda_trigger" {
     name        = "extract_lambda_trigger"
