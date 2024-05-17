@@ -7,12 +7,6 @@ on:
   pull_request:
     branches:
       - main
-env:
-  USERNAME: ${{ secrets.USERNAME }}
-  PASSWORD: ${{ secrets.PASSWORD }}
-  DATABASE: totesys
-  HOST: nc-data-eng-totesys-production.chpsczt8h1nu.eu-west-2.rds.amazonaws.com
-  PORT: '5432'
 
 jobs:
   run-tests:

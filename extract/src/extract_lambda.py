@@ -14,11 +14,33 @@ logger.setLevel(logging.INFO)
 # can set the environment variables in the aws_lambda_function resource in lambda.tf except for password 
 def connect_to_db():   
     """This function will connect to the totesys database and return the connection"""
-    username = os.environ['USERNAME']
-    password = os.environ['PASSWORD']
-    database = os.environ['DATABASE']
-    host = os.environ['HOST']
-    port = os.environ['PORT']
+    secret_name = "db_creds"
+    region_name = "eu-west-2"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+    print(secret)
+    print(type(secret))
+    # Your code goes here.
+    secret = json.loads(secret)
+    username = secret['username']
+    password = secret['password']
+    database = secret['dbname']
+    host = secret['host']
+    port = secret['port']
     return Connection(username, password = password, database = database, host = host, port = port)
 
 # function that reads entire contents of table at current time
@@ -52,9 +74,8 @@ def read_updates_from_any_tb(tb_name):
         return f"{tb_name} is not a valid table name."
 
 def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: str) -> json:
-    with open(f'{table}-{datetime.now()}.json', 'w') as file:
-        json.dump(formatted_data, file)
-        key = f'{table}-{datetime.now()}-snapshot'
+        file = json.dumps(formatted_data, default=str)
+        key = f'{datetime.now().date()}/{table}-{datetime.now().time()}.json'
 
         try:
             s3_client.put_object(Bucket=BUCKET_NAME, Key=key, Body=file)
@@ -65,19 +86,23 @@ def write_data(s3_client: str, BUCKET_NAME: str, formatted_data: list, table: st
             return False
 
 
-
 def lambda_handler(event, context):
     """Main handler - event is empty."""
 
     try:
-        BUCKET_NAME = os.environ['ingestion_zone_bucket']
+        #BUCKET_NAME = os.environ['ingestion_zone_bucket']
+        BUCKET_NAME = 'de-heritage-ingestion'
         s3_client = boto3.client("s3")
         bucket_content = s3_client.list_objects_v2(Bucket = BUCKET_NAME)
         tables = ['sales_order', 'design', 'currency', 'staff', 'counterparty',
         'address', 'department', 'purchase_order', 'payment_type', 'payment', 'transaction' ]
+        print(bucket_content)
         if bucket_content['KeyCount'] == 0:
             for table in tables:
+                print("reading data start")
                 result = read_history_data_from_any_tb(table)
+                
+                print("reading data successful")
                 write_data(s3_client,BUCKET_NAME, result, table)
         else:
             for table in tables:
@@ -87,9 +112,12 @@ def lambda_handler(event, context):
                 else:
                     logger.info(f'{table} has no new data at {datetime.now()}.')
     
-    except Exception as e:
+    except ClientError as e:
         logger.error(e)
                     
+
+    
+
         
 
 
