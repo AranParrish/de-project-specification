@@ -1,5 +1,5 @@
 import pytest
-from pg8000.native import Connection, DatabaseError
+from pg8000.native import Connection, InterfaceError
 import os
 from moto import mock_aws
 import boto3
@@ -47,16 +47,34 @@ def bucket(s3):
     )
 
 
-@pytest.mark.describe("test connection to database")
+@pytest.mark.describe("Connect to db function tests")
 class TestDatabaseConnection:
+
+    @pytest.mark.it("Function returns connection")
     def test_func_returns_connection(self):
         assert isinstance(connect_to_db(), Connection)
 
+    @pytest.mark.it("Function raises db error for invalid credentials")
     def test_conn_raises_db_error_for_invalid_creds(self, caplog):
         with patch.dict(secret, {"password": "password"}):
             with caplog.at_level(logging.ERROR):
                 connect_to_db()
                 assert "Database error" in caplog.text
+
+    @pytest.mark.it("Function raises InterfaceError if unable to connect to database")
+    def test_conn_raises_interfaceerror_db_busy(self, caplog):
+        with patch("extract.src.extract_lambda.Connection") as mock_conn:
+            mock_conn.side_effect = InterfaceError
+            with caplog.at_level(logging.ERROR):
+                connect_to_db()
+                assert "Unable to connect to database" in caplog.text
+
+    @pytest.mark.it("Function retries 3 times if unable to connect to database")
+    def test_conn_retries_if_unable_to_connect(self):
+        with patch("extract.src.extract_lambda.Connection") as mock_conn:
+            mock_conn.side_effect = InterfaceError
+            connect_to_db()
+            assert mock_conn.call_count == 3
 
 
 @pytest.mark.describe("test read historic data from database")

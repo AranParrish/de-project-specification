@@ -3,9 +3,10 @@ from botocore.exceptions import ClientError
 import logging
 import os
 from dotenv import load_dotenv
-from pg8000.native import Connection, DatabaseError
+from pg8000.native import Connection, DatabaseError, InterfaceError
 import json
 from datetime import datetime
+from time import sleep
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -30,13 +31,27 @@ BUCKET_NAME = os.environ["ingestion_zone_bucket"]
 
 
 # Connects to the totesys database using environment variables for credentials
+
+
 def connect_to_db():
     """This function will connect to the totesys database and return the connection"""
+    conn_attempts = 0
     try:
+        conn_attempts += 1
         conn = Connection(**secret)
         return conn
     except DatabaseError as exc:
         logger.error(f"Database error: {str(exc)}")
+    except InterfaceError:
+        while conn_attempts < 3:
+            try:
+                logger.error(f"Connection failed, waiting 10 seconds and retrying")
+                sleep(10)
+                conn = Connection(**secret)
+                return conn
+            except:
+                conn_attempts += 1
+        logger.error(f"Unable to connect to database")
 
 
 # Reads all data from a specified table in the database
