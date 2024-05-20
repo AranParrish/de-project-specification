@@ -4,3 +4,4 @@ __pycache**
 .env*
 .terraform*
 *.vscode*
+*.coverage*
