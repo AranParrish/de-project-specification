@@ -26,6 +26,7 @@ except ClientError as e:
 secret = get_secret_value_response["SecretString"]
 secret = json.loads(secret)
 
+BUCKET_NAME = os.environ["ingestion_zone_bucket"] 
 
 # Connects to the totesys database using environment variables for credentials
 def connect_to_db():
@@ -110,10 +111,8 @@ def write_data(
 
 
 def lambda_handler(event, context):
-    """Main handler - event is empty."""
-
+    """Main handler - event is empty.""" 
     try:
-        BUCKET_NAME = os.environ["ingestion_zone_bucket"]
         s3_client = boto3.client("s3")
         bucket_content = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
         tables = [
