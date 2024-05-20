@@ -145,4 +145,10 @@ def lambda_handler(event, context):
                     logger.info(f"{table} has no new data at {datetime.now()}.")
 
     except ClientError as e:
-        logger.error(e)
+        handle_client_error(e)
+        raise
+
+
+def handle_client_error(e):
+    error_code = e.response["Error"]["Code"]
+    logger.error(f"Error {error_code}: {e}")

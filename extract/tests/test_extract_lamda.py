@@ -5,6 +5,7 @@ from moto import mock_aws
 import boto3
 import logging
 from unittest.mock import Mock, patch
+from botocore.exceptions import ClientError
 
 with patch.dict(os.environ, {"ingestion_zone_bucket": "test_bucket"}):
     from extract.src.extract_lambda import (
@@ -155,3 +156,19 @@ class TestLambdaHandler:
         bucket_content = s3.list_objects_v2(Bucket=test_bucket)
         assert len(bucket_content["Contents"]) == 11
 
+    @pytest.mark.it("Test Client Error")
+    def test_client_error(self, caplog):
+        with patch("boto3.client") as mock_client:
+            mock_client.return_value.list_objects_v2.side_effect = ClientError(
+                {
+                    "Error": {
+                        "Code": "InvalidClientTokenId",
+                        "Message": "The security token included in the request is invalid.",
+                    }
+                },
+                "ClientError",
+            )
+            with pytest.raises(ClientError) as err:
+                lambda_handler({}, None)
+            assert err.value.response["Error"]["Code"] == "InvalidClientTokenId"
+            assert "Error InvalidClientTokenId: " in caplog.text
