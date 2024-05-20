@@ -17,6 +17,7 @@ with patch.dict(os.environ, {"ingestion_zone_bucket": "test_bucket"}):
         secret,
     )
 
+
 @pytest.fixture(scope="function")
 def mock_aws_credentials():
     """Mocked AWS Credentials for moto."""
@@ -117,6 +118,7 @@ class TestReadUpdateDataFromDB:
             read_history_data_from_any_tb(invalid_tb_name)
         assert "not a valid table name" in caplog.text
 
+
 @pytest.mark.describe("Test write data function")
 class TestWriteData:
     @pytest.mark.it("Input is not mutated")
@@ -147,14 +149,23 @@ class TestWriteData:
             write_data(s3, test_bucket, data, test_table)
         assert "ClientError" in caplog.text
 
+
 @pytest.mark.describe("Test lambda handler function")
 class TestLambdaHandler:
     @pytest.mark.it("Test for empty bucket")
     def test_lambda_handler_empty_bucket(self, s3, bucket):
-        lambda_handler(event='event', context='context')
+        lambda_handler(event="event", context="context")
         test_bucket = "test_bucket"
         bucket_content = s3.list_objects_v2(Bucket=test_bucket)
         assert len(bucket_content["Contents"]) == 11
+
+    @pytest.mark.it("Check for updated files")
+    def test_lambda_handler_updated_files(self, s3, caplog, bucket):
+        test_bucket = "test_bucket"
+        lambda_handler(event="event", context="context")
+        with caplog.at_level(logging.INFO):
+            lambda_handler(event="event", context="context")
+            assert "has no new data" in caplog.text
 
     @pytest.mark.it("Test Client Error")
     def test_client_error(self, caplog):
