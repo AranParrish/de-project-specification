@@ -169,6 +169,6 @@ class TestLambdaHandler:
                 "ClientError",
             )
             with pytest.raises(ClientError) as err:
-                lambda_handler({}, None)
+                lambda_handler(None, None)
             assert err.value.response["Error"]["Code"] == "InvalidClientTokenId"
             assert "Error InvalidClientTokenId: " in caplog.text
