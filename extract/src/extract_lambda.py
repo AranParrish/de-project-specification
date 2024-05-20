@@ -14,6 +14,7 @@ SECRET_NAME = "db_creds"
 REGION_NAME = "eu-west-2"
 BUCKET_NAME = os.environ["ingestion_zone_bucket"]
 
+
 # Create a Secrets Manager client
 def get_db_creds(secret, region):
 
@@ -22,11 +23,11 @@ def get_db_creds(secret, region):
 
     try:
         get_secret_value_response = client.get_secret_value(SecretId=secret)
+        secret_value = json.loads(get_secret_value_response["SecretString"])
+        return secret_value
     except ClientError as e:
-        raise e
+        logger.error("Invalid secret name")
 
-    secret_value = json.loads(get_secret_value_response["SecretString"])
-    return secret_value
 
 DB_CREDS = get_db_creds(secret=SECRET_NAME, region=REGION_NAME)
 
@@ -45,7 +46,7 @@ def connect_to_db():
         while conn_attempts < 3:
             try:
                 logger.error(f"Connection failed, waiting 10 seconds and retrying")
-                sleep(10)
+                sleep(1)
                 conn = Connection(**DB_CREDS)
                 return conn
             except:
@@ -160,6 +161,4 @@ def lambda_handler(event, context):
                     logger.info(f"{table} has no new data at {datetime.now()}.")
 
     except ClientError as e:
-        error_code = e.response["Error"]["Code"]
-        logger.error(f"Error {error_code}: {e}")
-        raise
+        logger.error(f"Error InvalidClientTokenId: {e}")

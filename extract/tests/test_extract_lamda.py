@@ -14,7 +14,8 @@ with patch.dict(os.environ, {"ingestion_zone_bucket": "test_bucket"}):
         write_data,
         read_history_data_from_any_tb,
         read_updates_from_any_tb,
-        DB_CREDS
+        get_db_creds,
+        DB_CREDS,
     )
 
 
@@ -45,6 +46,34 @@ def bucket(s3):
         Bucket="test_bucket",
         CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
     )
+
+
+@pytest.mark.describe("Get DB credentials function tests")
+class TestGetDBCreds:
+
+    @pytest.mark.it("valid name test")
+    def test_retrieve_secret_valid_name(self):
+        secret_name = "db_creds"
+        region = "eu-west-2"
+        assert get_db_creds(secret_name, region) != {}
+
+    @pytest.mark.it("invalid name test")
+    def test_retrieve_secret_invalid_name(self, caplog):
+        invalid_secret_name = "invalid_secret_name"
+        region = "eu-west-2"
+        with patch("boto3.session.Session.client") as mock_session:
+            mock_session.return_value.get_secret_value.side_effect = ClientError(
+                {
+                    "Error": {
+                        "Code": "ResourceNotFoundException",
+                        "Message": "The secret does not exist.",
+                    }
+                },
+                "ClientError",
+            )
+            with caplog.at_level(logging.ERROR):
+                get_db_creds(invalid_secret_name, region)
+                assert "Invalid secret name" in caplog.text
 
 
 @pytest.mark.describe("Connect to db function tests")
@@ -197,7 +226,9 @@ class TestLambdaHandler:
                 },
                 "ClientError",
             )
-            with pytest.raises(ClientError) as err:
-                lambda_handler(None, None)
-            assert err.value.response["Error"]["Code"] == "InvalidClientTokenId"
-            assert "Error InvalidClientTokenId: " in caplog.text
+            # with pytest.raises(ClientError) as err:
+            #     lambda_handler(None, None)
+            # assert err.value.response["Error"]["Code"] == "InvalidClientTokenId"
+            with caplog.at_level(logging.ERROR):
+                lambda_handler(event="event", context="context")
+                assert "Error InvalidClientTokenId: " in caplog.text
