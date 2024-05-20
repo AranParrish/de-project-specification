@@ -2,43 +2,42 @@ import boto3
 from botocore.exceptions import ClientError
 import logging
 import os
-from dotenv import load_dotenv
 from pg8000.native import Connection, DatabaseError, InterfaceError
 import json
 from datetime import datetime
 from time import sleep
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-secret_name = "db_creds"
-region_name = "eu-west-2"
+SECRET_NAME = "db_creds"
+REGION_NAME = "eu-west-2"
+BUCKET_NAME = os.environ["ingestion_zone_bucket"]
 
 # Create a Secrets Manager client
-session = boto3.session.Session()
-client = session.client(service_name="secretsmanager", region_name=region_name)
+def get_db_creds(secret, region):
 
-try:
-    get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-except ClientError as e:
-    raise e
+    session = boto3.session.Session()
+    client = session.client(service_name="secretsmanager", region_name=region)
 
-secret = get_secret_value_response["SecretString"]
-secret = json.loads(secret)
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret)
+    except ClientError as e:
+        raise e
 
-BUCKET_NAME = os.environ["ingestion_zone_bucket"]
+    secret_value = json.loads(get_secret_value_response["SecretString"])
+    return secret_value
+
+DB_CREDS = get_db_creds(secret=SECRET_NAME, region=REGION_NAME)
 
 
 # Connects to the totesys database using environment variables for credentials
-
-
 def connect_to_db():
     """This function will connect to the totesys database and return the connection"""
     conn_attempts = 0
     try:
         conn_attempts += 1
-        conn = Connection(**secret)
+        conn = Connection(**DB_CREDS)
         return conn
     except DatabaseError as exc:
         logger.error(f"Database error: {str(exc)}")
@@ -47,7 +46,7 @@ def connect_to_db():
             try:
                 logger.error(f"Connection failed, waiting 10 seconds and retrying")
                 sleep(10)
-                conn = Connection(**secret)
+                conn = Connection(**DB_CREDS)
                 return conn
             except:
                 conn_attempts += 1

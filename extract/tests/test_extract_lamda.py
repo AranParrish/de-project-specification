@@ -14,7 +14,7 @@ with patch.dict(os.environ, {"ingestion_zone_bucket": "test_bucket"}):
         write_data,
         read_history_data_from_any_tb,
         read_updates_from_any_tb,
-        secret,
+        DB_CREDS
     )
 
 
@@ -56,7 +56,7 @@ class TestDatabaseConnection:
 
     @pytest.mark.it("Function raises db error for invalid credentials")
     def test_conn_raises_db_error_for_invalid_creds(self, caplog):
-        with patch.dict(secret, {"password": "password"}):
+        with patch.dict(DB_CREDS, {"password": "password"}):
             with caplog.at_level(logging.ERROR):
                 connect_to_db()
                 assert "Database error" in caplog.text
