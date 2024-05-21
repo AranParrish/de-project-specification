@@ -1,9 +1,15 @@
 # Defines IAM policies and CloudWatch log groups/streams to manage and monitor logs for Lambda functions
 
-# Create IAM policy for CloudWatch Logs permissions
-resource "aws_iam_policy" "cloudwatch_logs_policy" {
-  name        = "CloudWatchLogsPermissions"
-  description = "IAM policy for CloudWatch Logs permissions"
+# Get the current account identity and region
+
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
+
+# Create IAM policy for CloudWatch Logs permissions for extract lambda function
+resource "aws_iam_policy" "extract_cloudwatch_logs_policy" {
+  name        = "ExtractCloudWatchLogsPermissions"
+  description = "IAM policy for extract lambda CloudWatch Logs permissions"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -19,37 +25,35 @@ resource "aws_iam_policy" "cloudwatch_logs_policy" {
           "logs:GetLogEvents",
           "logs:FilterLogEvents"
         ]
-        Resource = "arn:aws:logs:*:*:*"
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.extract_lambda_name}:*"
       }
     ]
   })
 }
 
-# Create CloudWatch Logs group
-resource "aws_cloudwatch_log_group" "extract_lambda_log_group" {
-  name              = "/aws/extract_lambda/logs"
-  retention_in_days = 30
-}
-
-# Create CloudWatch Logs stream
-resource "aws_cloudwatch_log_stream" "extract_lambda_log_stream" {
-  name           = "extract-lambda-log-stream"
-  log_group_name = aws_cloudwatch_log_group.extract_lambda_log_group.name
-}
-
-
 # For processed data
 
-# Same IAM policy for CloudWatch Logs permissions
+# Create IAM policy for CloudWatch Logs permissions for processed lambda function
+resource "aws_iam_policy" "processed_cloudwatch_logs_policy" {
+  name        = "ProcessedCloudWatchLogsPermissions"
+  description = "IAM policy for processed lambda CloudWatch Logs permissions"
 
-# Create CloudWatch Logs group
-resource "aws_cloudwatch_log_group" "processed_lambda_log_group" {
-  name              = "/aws/processed_lambda/logs"
-  retention_in_days = 30
-}
-
-# Create CloudWatch Logs stream
-resource "aws_cloudwatch_log_stream" "processed_lambda_log_stream" {
-  name           = "processed-lambda-log-stream"
-  log_group_name = aws_cloudwatch_log_group.processed_lambda_log_group.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents"
+        ]
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.processed_lambda_name}:*"
+      }
+    ]
+  })
 }
