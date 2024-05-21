@@ -226,9 +226,6 @@ class TestLambdaHandler:
                 },
                 "ClientError",
             )
-            # with pytest.raises(ClientError) as err:
-            #     lambda_handler(None, None)
-            # assert err.value.response["Error"]["Code"] == "InvalidClientTokenId"
             with caplog.at_level(logging.ERROR):
                 lambda_handler(event="event", context="context")
                 assert "Error InvalidClientTokenId: " in caplog.text
