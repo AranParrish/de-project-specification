@@ -38,7 +38,6 @@ def conversion_for_dim_currency(file_name):
     df = pd.read_json(file_name)
     df = df.drop(['created_at', 'last_updated'], axis = 1)
     for i in range(len(df)):
-        print(df.loc[i, 'currency_code'])
         if df.loc[i,'currency_code'] == 'GBP':
             df.loc[i, 'currency_name'] = 'Pound Sterling'
         elif df.loc[i,'currency_code'] == 'USD':
@@ -93,28 +92,19 @@ def conversion_for_dim_staff(dep_file, staff_file):
 # this function takes in dataframe (used for a date dataframe) and creates the columns needed for the dim_date table
 
 def conversion_for_dim_date_helper(date_df, column):
-    df = pd.DataFrame()
-    # print(type(date_df.loc[0, "created_at"]))
-    for i in range(len(date_df)):
-        df.loc[i,'date_id'] = date_df.loc[i, column].date()
-        df.loc[i,'year'] = date_df.loc[i, column].year
-        df.loc[i, 'month'] = date_df.loc[i, column].month
-        df.loc[i, 'day'] = date_df.loc[i, column].day
-        df.loc[i, 'day_of_week'] = date_df.loc[i, column].dayofweek
-        df.loc[i, 'day_name'] = date_df.loc[i, column].day_name()
-        df.loc[i, 'month_name'] = date_df.loc[i, column].month_name()
-        df.loc[i, 'quarter'] = date_df.loc[i, column].quarter
-    
+    date_df['date_id'] = date_df[column].dt.date
+    date_df['year'] = date_df[column].dt.year
+    date_df['month'] = date_df[column].dt.month
+    date_df['day'] = date_df[column].dt.day
+    date_df['day_of_week'] = date_df[column].dt.dayofweek
+    date_df['day_name'] = date_df[column].dt.day_name()
+    date_df['month_name'] = date_df[column].dt.month_name()
+    date_df['quarter'] = date_df[column].dt.quarter
 
-    df.year = df.year.astype('int64')
-    df.month = df.month.astype('int64')
-    df.day = df.day.astype('int64')
-    df.day_of_week = df.day_of_week.astype('int64')
-    df.quarter = df.quarter.astype('int64')
-    #print(df.dtypes)
-    #print(df.head())
+    date_df = date_df.drop(column, axis = 1)
+    date_df = date_df.convert_dtypes()
     
-    return df
+    return date_df
 
 # this function takes in a sales_order json file and creates dataframes from the date columns
 # it calls the function above and combines all rows while removing duplicates 
@@ -123,12 +113,10 @@ def conversion_for_dim_date_helper(date_df, column):
 def dim_date_tb(sales_order_file):
     df = pd.read_json(sales_order_file)
     created_at_df = df[['created_at']]
-    #created_at_df = created_at_df.drop_duplicates()
-    #print(created_at_df.shape)
     created_date_df = conversion_for_dim_date_helper(created_at_df, "created_at")
+
     
     last_updated_date_df = df[['last_updated']]
-    #print(last_updated_date_df.shape)
     last_updated_date_df.last_updated = last_updated_date_df.last_updated.astype('datetime64[ns]')
     last_updated_date_df = conversion_for_dim_date_helper(last_updated_date_df, "last_updated")
 
@@ -174,4 +162,4 @@ def conversion_for_fact_sales_order(sales_order_file):
 
    
     
-# conversion_for_fact_sales_order('load/src/sales_order-23_42_58.245848.json') 
+dim_date_tb('load/tests/data/sales_order.json') 
