@@ -55,6 +55,7 @@ def conversion_for_dim_design(file_name):
     df = pd.read_json(file_name)
     df = df.drop(['created_at', 'last_updated'], axis = 1)
     df = df.set_index('design_id')
+    df = df.convert_dtypes()
     return ('dim_design', df)
 
 # this function takes in an address json file and counterparty json file and restructures it to match dim_counterparty table

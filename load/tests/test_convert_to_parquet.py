@@ -63,25 +63,28 @@ class TestDimCurrency:
     
 @pytest.mark.describe("test conversion_for_dim_design")
 class TestDimDesign:
-    # input_file = 'load/tests/data/currency.json'
-    # output_df = conversion_for_dim_currency(input_file)[1]
-    # output_df_table_name = conversion_for_dim_currency(input_file)[0]
+    input_file = 'load/tests/data/design.json'
+    output_df = conversion_for_dim_design(input_file)[1]
+    output_df_table_name = conversion_for_dim_design(input_file)[0]
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        pass
+        expected_columns = ['design_name','file_location','file_name']
+        assert list(self.output_df.columns) == expected_columns
 
     @pytest.mark.it("check index column is design_id")
     def test_index_column_is_location_id(self):
-        pass
+        assert self.output_df.index.name == 'design_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
-        pass
+        for column in self.output_df.columns:
+            assert type(column) == str
 
     @pytest.mark.it("check output is correct table name and dataframe")
     def test_output_is_correct_table_name_and_dataframe(self):
-        pass
+        assert self.output_df_table_name == 'dim_design'
+        assert isinstance(self.output_df, pd.DataFrame)
 
 @pytest.mark.describe("test conversion_for_dim_counterparty")
 class TestDimCounterparty:
