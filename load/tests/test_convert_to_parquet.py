@@ -211,14 +211,42 @@ class TestFactSalesOrder:
 
     @pytest.mark.it("check index column is sales_record_id")
     def test_index_column_is_location_id(self):
-        pass
+        assert self.output_df.index.name == 'sales_record_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
-        pass
+        assert self.output_df.sales_order_id.dtype == 'int64'
+        assert self.output_df.design_id.dtype == 'int64'
+        assert self.output_df.sales_staff_id.dtype == 'int64'
+        assert self.output_df.counterparty_id.dtype == 'int64'
+        assert self.output_df.units_sold.dtype == 'int64'
+        assert self.output_df.unit_price .dtype == 'float64'
+        assert self.output_df.currency_id.dtype == 'int64'
+        assert self.output_df.agreed_delivery_date.dtype == object
+        assert self.output_df.agreed_payment_date.dtype == object
+        assert self.output_df.agreed_delivery_location_id.dtype == 'int64'
+        assert self.output_df.created_date.dtype == object
+        assert self.output_df.created_time.dtype == object
+        assert self.output_df.last_updated_date.dtype == object
+        assert self.output_df.last_updated_time.dtype == object
+
+    @pytest.mark.it("check values of agreed_delivery_date, agreed_payment_date, created_date, last_updated_date are of date type")
+    def test_values_in_date_type(self):
+        for i in self.output_df.index:
+            assert isinstance(self.output_df.loc[i,"agreed_delivery_date"], datetime.date)
+            assert isinstance(self.output_df.loc[i,"agreed_payment_date"], datetime.date)
+            assert isinstance(self.output_df.loc[i,"created_date"], datetime.date)
+            assert isinstance(self.output_df.loc[i,"last_updated_date"], datetime.date)
+    
+    @pytest.mark.it("check values of created_time and last_updated_time are of time type")
+    def test_values_in_time_type(self):
+        for i in self.output_df.index:
+            assert isinstance(self.output_df.loc[i,"created_time"], datetime.time)
+            assert isinstance(self.output_df.loc[i,"last_updated_time"], datetime.time)
 
     @pytest.mark.it("check output is correct table name and dataframe")
     def test_output_is_correct_table_name_and_dataframe(self):
-        pass
+        assert self.output_df_table_name == 'fact_sales_order'
+        assert isinstance(self.output_df, pd.DataFrame)
 
 

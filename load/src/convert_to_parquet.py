@@ -153,11 +153,4 @@ def conversion_for_fact_sales_order(sales_order_file):
     df.drop(['created_at', 'last_updated'], axis = 1, inplace = True)
     df.rename(columns={'staff_id': 'sales_staff_id'}, inplace = True)
     df = df.set_index('sales_record_id')
-    # print(df.dtypes)
-    # print(df.columns)
     return ('fact_sales_order', df)
-    
-
-   
-    
-dim_date_tb('load/tests/data/sales_order.json') 
