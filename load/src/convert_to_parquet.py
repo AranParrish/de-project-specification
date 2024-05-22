@@ -114,12 +114,10 @@ def dim_date_tb(sales_order_file):
     df = pd.read_json(sales_order_file)
     created_at_df = df[['created_at']]
     created_date_df = conversion_for_dim_date_helper(created_at_df, "created_at")
-
     
     last_updated_date_df = df[['last_updated']]
     last_updated_date_df.last_updated = last_updated_date_df.last_updated.astype('datetime64[ns]')
     last_updated_date_df = conversion_for_dim_date_helper(last_updated_date_df, "last_updated")
-
     
     agreed_payment_date_df = df[['agreed_payment_date']]
     agreed_payment_date_df.agreed_payment_date = agreed_payment_date_df.agreed_payment_date.astype('datetime64[ns]')
@@ -132,6 +130,8 @@ def dim_date_tb(sales_order_file):
     frames = [created_date_df, last_updated_date_df, agreed_payment_date_df, agreed_delivery_date_df]
     dim_date_df = pd.concat(frames)
     dim_date_df =dim_date_df.drop_duplicates()
+    dim_date_df = dim_date_df.set_index('date_id')
+
     
     # print(dim_date_df.shape)
     return ('dim_date', dim_date_df)

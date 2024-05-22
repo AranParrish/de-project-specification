@@ -5,7 +5,7 @@ import datetime
 from load.src.convert_to_parquet import conversion_for_dim_location,\
     conversion_for_dim_currency, conversion_for_dim_design, \
     conversion_for_dim_counterparty, conversion_for_dim_staff, \
-    conversion_for_dim_date_helper
+    conversion_for_dim_date_helper, dim_date_tb, conversion_for_fact_sales_order
 
 @pytest.mark.describe("test conversion_for_dim_location")
 class TestDimLocation:
@@ -149,7 +149,6 @@ class TestDimDateHelper:
     column = 'created_at'
     created_at_df = df[[column]]
     output_df = conversion_for_dim_date_helper(created_at_df, column)
-    
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
@@ -179,18 +178,24 @@ class TestDimDateHelper:
 
 @pytest.mark.describe("test conversion_for_dim_date_tb")
 class TestDimDateTb:
+    input_file = 'load/tests/data/sales_order.json'
+    output_df = dim_date_tb(input_file)[1]
+    output_df_table_name = dim_date_tb(input_file)[0]
 
     @pytest.mark.it("check there are no duplicate rows")
     def test_no_duplicate_rows(self):
-        pass
+        result = self.output_df.duplicated()
+        for index, value in result.items():
+            assert value == False
 
     @pytest.mark.it("check index column is date_id")
-    def test_index_column_is_location_id(self):
-        pass
+    def test_index_column_is_date_id(self):
+        assert self.output_df.index.name == 'date_id'
 
     @pytest.mark.it("check output is correct table name and dataframe")
     def test_output_is_correct_table_name_and_dataframe(self):
-        pass
+        assert self.output_df_table_name == 'dim_date'
+        assert isinstance(self.output_df, pd.DataFrame)
 
 @pytest.mark.describe("test conversion_for_fact_sales_order")
 class TestFactSalesOrder:
