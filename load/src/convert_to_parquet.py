@@ -28,6 +28,7 @@ def conversion_for_dim_location(file_name):
     df = df.drop(['created_at', 'last_updated'], axis = 1)
     df.rename(columns={'address_id': 'location_id'}, inplace = True)
     df = df.set_index('location_id')
+    df = df.convert_dtypes()
     # df.to_parquet(f'{datetime.now().date()}/dim_location-{datetime.now().time()}.parquet')
     return ('dim_location', df)
 
@@ -168,4 +169,4 @@ def conversion_for_fact_sales_order(sales_order_file):
 
    
     
-conversion_for_fact_sales_order('load/src/sales_order-23_42_58.245848.json') 
+# conversion_for_fact_sales_order('load/src/sales_order-23_42_58.245848.json') 

@@ -8,27 +8,33 @@ from load.src.convert_to_parquet import conversion_for_dim_location,\
 
 @pytest.mark.describe("test conversion_for_dim_location")
 class TestDimLocation:
+    input_file = 'load/tests/data/address.json'
+    output_df = conversion_for_dim_location(input_file)[1]
+    output_df_table_name = conversion_for_dim_location(input_file)[0]
 
-    @pytest.mark.it("check the number of columns")
+    @pytest.mark.it("check the number of columns without primary key column")
     def test_number_of_columns(self):
-        # added address.json at tests/data for testing
-        pass
+        print(self.output_df.head())
+        assert len(self.output_df.columns) == 7
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        pass
+        expected_columns = ['address_line_1','address_line_2','district','city','postal_code','country','phone']
+        assert list(self.output_df.columns) == expected_columns
 
     @pytest.mark.it("check index column is location_id")
     def test_index_column_is_location_id(self):
-        pass
+        assert self.output_df.index.name == 'location_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
-        pass
+       for column in self.output_df.columns:
+           assert type(column) ==  str
 
     @pytest.mark.it("check output is correct table name and dataframe")
     def test_output_is_correct_table_name_and_dataframe(self):
-        pass
+        assert self.output_df_table_name == 'dim_location'
+        assert isinstance(self.output_df, pd.DataFrame)
 
 @pytest.mark.describe("test conversion_for_dim_currency")
 class TestDimCurrency:
