@@ -40,10 +40,10 @@ def test_ingestion_bucket(s3):
         Bucket="test_ingestion_bucket",
         CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
     )
-    with open("transform/tests/test_data/counterparty-14_56_53.298826.json") as f:
+    with open("transform/tests/test_data/sales_order-15_36_42.731009.json") as f:
         text_to_write = f.read()
         s3.put_object(
-            Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/counterparty-14_56_53.298826.json"
+            Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/sales_order-15_36_42.731009.json"
         )
 
 

@@ -1,6 +1,7 @@
 import pandas as pd
 import logging, boto3, os, re
 from datetime import datetime
+import awswrangler as wr
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -182,13 +183,14 @@ def conversion_for_fact_sales_order(sales_order_file):
     # print(df.columns)
     return df
 
-def put_parquet_into_bucket(client):
-    client.put_object(
-    Body='filetoupload',
-    Bucket='examplebucket',
-    Key='objectkey',
-    )
-    pass
+def put_parquet_into_bucket(client, body, key):
+    response = client.put_object(
+                                    Body= body,
+                                    Bucket=PROCESSED_ZONE_BUCKET,
+                                    Key=key,
+                                )
+    return response
+    
 
 def lambda_handler(event, context):
     client = boto3.client("s3")
@@ -197,6 +199,7 @@ def lambda_handler(event, context):
         department_key = ""
         address_key = ""
         for bucket_key in ingestion_files["Contents"]:
+            #print(bucket_key['Key'][11:])
             pattern = re.compile(r"(['/'])(\w+)")
             match = pattern.search(bucket_key["Key"])
             key_name = bucket_key["Key"][:-5]
@@ -205,26 +208,35 @@ def lambda_handler(event, context):
                 table_name = match.group(2)
 
                 if table_name == "sales_order":
-                    df = conversion_for_fact_sales_order(bucket_key["Key"])
-                    df.to_parquet(f"{key_name}.parquet")
+                    df = conversion_for_fact_sales_order(bucket_key['Key'][11:])
+                    #df = conversion_for_fact_sales_order(bucket_key['Key'])
+                    #wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name}.parquet')
+                    put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
+                    
                 elif table_name == "address":
                     address_key = bucket_key["Key"]
+                
                 elif table_name == "counterparty":
                     if address_key:
                         df = conversion_for_dim_counterparty(
                             address_key, bucket_key["Key"]
                         )
                         df.to_parquet(f"{key_name}.parquet")
+                        #put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
+                
                 elif table_name == "department":
                     department_key = bucket_key["Key"]
                 elif table_name == "staff":
                     if department_key:
                         df = conversion_for_dim_staff(department_key, bucket_key["Key"])
                         df.to_parquet(f"{key_name}.parquet")
+                        #put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
+                
                 else:
                     function_name = f"conversion_for_dim_{table_name}"
                     df = function_name(bucket_key["Key"])
                     df.to_parquet(f"{key_name}.parquet")
+                    #put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
 
 
             else:
