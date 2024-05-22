@@ -116,22 +116,31 @@ class TestDimCounterparty:
 
 @pytest.mark.describe("test conversion_for_dim_staff")
 class TestDimStaff:
+    input_dep_file = 'load/tests/data/department.json'
+    input_staff_file = 'load/tests/data/staff.json'
+    output_df = conversion_for_dim_staff(input_dep_file,input_staff_file)[1]
+    output_df_table_name = conversion_for_dim_staff(input_dep_file, input_staff_file)[0]
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        pass
+        expected_columns = ['first_name','last_name','department_name','location','email_address']
+        for column in self.output_df.columns:
+            assert column in expected_columns
+
 
     @pytest.mark.it("check index column is staff_id")
     def test_index_column_is_location_id(self):
-        pass
+        assert self.output_df.index.name == 'staff_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
-        pass
+        for column in self.output_df.columns:
+            assert type(column) == str
 
     @pytest.mark.it("check output is correct table name and dataframe")
     def test_output_is_correct_table_name_and_dataframe(self):
-        pass
+        assert self.output_df_table_name == 'dim_staff'
+        assert isinstance(self.output_df, pd.DataFrame)
 
 @pytest.mark.describe("test conversion_for_dim_date_helper")
 class TestDimDateHelper:

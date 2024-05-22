@@ -87,6 +87,7 @@ def conversion_for_dim_staff(dep_file, staff_file):
     df = pd.merge(staff_df, dep_df, on = 'department_id', how = 'left')
     df = df.drop('department_id', axis = 1)
     df = df.set_index('staff_id')
+    df = df.convert_dtypes()
     return ('dim_staff', df)
 
 # this function takes in dataframe (used for a date dataframe) and creates the columns needed for the dim_date table
