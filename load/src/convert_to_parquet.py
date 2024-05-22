@@ -132,8 +132,6 @@ def dim_date_tb(sales_order_file):
     dim_date_df =dim_date_df.drop_duplicates()
     dim_date_df = dim_date_df.set_index('date_id')
 
-    
-    # print(dim_date_df.shape)
     return ('dim_date', dim_date_df)
 
 # this function takes in a sales_order json file and restructures the data to match the fact_sales_order table

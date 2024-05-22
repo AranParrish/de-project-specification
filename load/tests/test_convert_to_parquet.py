@@ -199,10 +199,15 @@ class TestDimDateTb:
 
 @pytest.mark.describe("test conversion_for_fact_sales_order")
 class TestFactSalesOrder:
+    input_file = 'load/tests/data/sales_order.json'
+    output_df = conversion_for_fact_sales_order(input_file)[1]
+    output_df_table_name = conversion_for_fact_sales_order(input_file)[0]
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        pass
+        expected_columns = ["sales_order_id","created_date","created_time","last_updated_date","last_updated_time","sales_staff_id","counterparty_id","units_sold","unit_price","currency_id","design_id","agreed_payment_date","agreed_delivery_date","agreed_delivery_location_id"]
+        for column in self.output_df.columns:
+            assert column in expected_columns
 
     @pytest.mark.it("check index column is sales_record_id")
     def test_index_column_is_location_id(self):
