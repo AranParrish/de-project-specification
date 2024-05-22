@@ -53,7 +53,7 @@ resource "aws_lambda_function" "processed_lambda" {
     role = aws_iam_role.processed_lambda_role.arn 
     filename=data.archive_file.processed_lambda_zip.output_path 
     source_code_hash = data.archive_file.processed_lambda_zip.output_base64sha256
-    # layers = [aws_lambda_layer_version.python_dotenv_layer.arn]
+    layers = ["arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python312:8"]
     handler = "processed_lambda.lambda_handler" 
     runtime = "python3.12"
     timeout = 300
@@ -91,6 +91,8 @@ data "archive_file" "processed_lambda_zip" {
 #   source_dir = "${path.module}/../transform/layer/"
 #   output_path = "${path.module}/../transform/layer.zip"
 # }
+
+
 
 
 
