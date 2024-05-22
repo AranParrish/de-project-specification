@@ -63,6 +63,7 @@ def conversion_for_dim_counterparty(ad_file, cp_file):
     ad_df = pd.read_json(ad_file)
     ad_df.drop(['created_at', 'last_updated'], axis = 1, inplace = True)
     ad_df = ad_df.add_prefix('counterparty_legal_') 
+    ad_df.rename(columns={'counterparty_legal_phone': 'counterparty_legal_phone_number'}, inplace = True)
     ad_df.rename(columns={'counterparty_legal_address_id': 'legal_address_id'}, inplace = True)
 
     cp_df = pd.read_json(cp_file)
@@ -72,6 +73,7 @@ def conversion_for_dim_counterparty(ad_file, cp_file):
 
     df.rename(columns={'address_id': 'legal_address_id'}, inplace = True)
     df = df.set_index('counterparty_id')
+    df = df.convert_dtypes()
     return ('dim_counterparty', df)
 
 # this function takes in a department json file and staff json file and restructures it to match the dim_staff table
