@@ -46,6 +46,7 @@ def conversion_for_dim_currency(file_name):
         elif df.loc[i,'currency_code'] == 'EUR':
             df.loc[i, 'currency_name'] = 'Euro'
     df = df.set_index('currency_id')
+    df = df.convert_dtypes()
     return ('dim_currency', df)
 
 # this function takes in a design json file and restructures it to match dim_design table
