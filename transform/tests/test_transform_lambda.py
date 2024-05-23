@@ -79,7 +79,7 @@ class TestTransfomLambdaHandler:
         
         df = wr.s3.read_parquet(path=f"s3://test_processed_bucket/2024-05-21/sales_order-15_36_42.731009.parquet")
         
-        expected = ['sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
+        expected = ['sales_record_id', 'sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
        'units_sold', 'unit_price', 'currency_id', 'agreed_delivery_date',
        'agreed_payment_date', 'agreed_delivery_location_id', 'created_date',
        'created_time', 'last_updated_date', 'last_updated_time']
