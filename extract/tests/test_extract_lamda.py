@@ -69,7 +69,7 @@ class TestGetDBCreds:
                         "Message": "The secret does not exist.",
                     }
                 },
-                "ClientError",
+                "ClientError"
             )
             with caplog.at_level(logging.ERROR):
                 get_db_creds(invalid_secret_name, region)
