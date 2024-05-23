@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 import datetime
 
-from transform.src.convert_to_parquet import conversion_for_dim_location,\
+from transform.src.transform_lambda_utils import conversion_for_dim_location,\
     conversion_for_dim_currency, conversion_for_dim_design, \
     conversion_for_dim_counterparty, conversion_for_dim_staff, \
     date_helper, conversion_for_dim_date, conversion_for_fact_sales_order

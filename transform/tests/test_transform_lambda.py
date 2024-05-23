@@ -1,4 +1,6 @@
 import pytest, os, boto3
+import pandas as pd
+import awswrangler as wr
 from moto import mock_aws
 from unittest.mock import patch
 
@@ -67,5 +69,22 @@ class TestTransfomLambdaHandler:
     def test_transform_lambda_initilisation(self, test_ingestion_bucket, test_processed_bucket, s3):
         lambda_handler({}, None)
         assert s3.list_objects_v2(Bucket='test_ingestion_bucket')['KeyCount'] == s3.list_objects_v2(Bucket='test_processed_bucket')['KeyCount']
+        
+    
+    @mock_aws(config={"s3": {"use_docker": False}})
+    @pytest.mark.it('Check Object Key Content')
+    def test_transform_lambda_content(self, test_ingestion_bucket, test_processed_bucket, s3):
+        lambda_handler({}, None)
+        response = s3.get_object(Bucket='test_processed_bucket', Key= "2024-05-21/sales_order-15_36_42.731009.parquet" )
+        
+        df = wr.s3.read_parquet(path=f"s3://test_processed_bucket/2024-05-21/sales_order-15_36_42.731009.parquet")
+        
+        expected = ['sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
+       'units_sold', 'unit_price', 'currency_id', 'agreed_delivery_date',
+       'agreed_payment_date', 'agreed_delivery_location_id', 'created_date',
+       'created_time', 'last_updated_date', 'last_updated_time']
+        
+        assert all([ col in expected for col in df.columns])
+            
         
     

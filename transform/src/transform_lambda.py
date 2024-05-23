@@ -61,7 +61,6 @@ def conversion_for_dim_counterparty(ad_df, cp_df):
         columns={"counterparty_legal_address_id": "legal_address_id", 'counterparty_legal_phone': 'counterparty_legal_phone_number'}, inplace=True
     )
 
-    cp_df = pd.read_json(cp_file)
     cp_df = cp_df[["counterparty_id", "counterparty_legal_name", "legal_address_id"]]
     df = pd.merge(cp_df, ad_df, on="legal_address_id", how="left")
     df = df.drop("legal_address_id", axis=1)
@@ -170,14 +169,6 @@ def conversion_for_fact_sales_order(sales_order_df):
     df = df.set_index("sales_record_id")
 
     return df
-
-def put_parquet_into_bucket(client, body, key):
-    response = client.put_object(
-                                    Body= body,
-                                    Bucket=PROCESSED_ZONE_BUCKET,
-                                    Key=key,
-                                )
-    return response
     
 
 def lambda_handler(event, context):
