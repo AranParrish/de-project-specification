@@ -67,3 +67,5 @@ class TestTransfomLambdaHandler:
     def test_transform_lambda_initilisation(self, test_ingestion_bucket, test_processed_bucket, s3):
         lambda_handler({}, None)
         assert s3.list_objects_v2(Bucket='test_ingestion_bucket')['KeyCount'] == s3.list_objects_v2(Bucket='test_processed_bucket')['KeyCount']
+        
+    
