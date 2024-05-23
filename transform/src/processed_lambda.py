@@ -2,6 +2,7 @@ import pandas as pd
 import logging, boto3, os, re, json
 from datetime import datetime
 import awswrangler as wr
+from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -165,69 +166,86 @@ def conversion_for_fact_sales_order(sales_order_df):
     
 
 def lambda_handler(event, context):
-    client = boto3.client("s3")
-    if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
-        ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
-        department_df = ""
-        address_df = ""
-        for bucket_key in ingestion_files["Contents"]:
-            pattern = re.compile(r"(['/'])(\w+)")
-            match = pattern.search(bucket_key["Key"])
-            key_name = bucket_key["Key"]
-            
-            if match:
-                table_name = match.group(2)
-                # Retrieve JSON data from S3
-                resp = client.get_object(Bucket = INGESTION_ZONE_BUCKET, Key= key_name)
-                file_content = resp['Body'].read().decode('utf-8')
-                data = json.loads(file_content)
+    try:
+        client = boto3.client("s3")
+        if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
+            ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
+            department_df = ""
+            address_df = ""
+            for bucket_key in ingestion_files["Contents"]:
+                pattern = re.compile(r"(['/'])(\w+)")
+                match = pattern.search(bucket_key["Key"])
+                key_name = bucket_key["Key"]
                 
-                if table_name == "sales_order":
-                    # Convert JSON data to DataFrame
-                    df = pd.DataFrame(data, index=['sales_order_id'])
-                    df = conversion_for_fact_sales_order(df)
-                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
+                if match:
+                    table_name = match.group(2)
+                    logger.info(f"Processing table: {table_name}")
+                    # Retrieve JSON data from S3
+                    resp = client.get_object(Bucket = INGESTION_ZONE_BUCKET, Key= key_name)
+                    file_content = resp['Body'].read().decode('utf-8')
+                    data = json.loads(file_content)
                     
-                elif table_name == "address":
-                    address_df = pd.DataFrame(data, index=['address_id'])
-                                    
-                elif table_name == "counterparty":
-                    if address_df:
-                        counterparty_df = pd.DataFrame(data, index=['counterparty_id'])
-                        df = conversion_for_dim_counterparty(address_df, counterparty_df)
+                    if table_name == "sales_order":
+                        # Convert JSON data to DataFrame
+                        df = pd.DataFrame(data, index=['sales_order_id'])
+                        df = conversion_for_fact_sales_order(df)
                         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-                
-                elif table_name == "department":
-                    department_df = pd.DataFrame(data, index=['department_id'])
+                        
+                    elif table_name == "address":
+                        address_df = pd.DataFrame(data, index=['address_id'])
+                                        
+                    elif table_name == "counterparty":
+                        if address_df:
+                            counterparty_df = pd.DataFrame(data, index=['counterparty_id'])
+                            df = conversion_for_dim_counterparty(address_df, counterparty_df)
+                            wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
+                    
+                    elif table_name == "department":
+                        department_df = pd.DataFrame(data, index=['department_id'])
 
-                elif table_name == "staff":
-                    if department_df:
-                        staff_df = pd.DataFrame(data, index=['staff_id'])
-                        df = conversion_for_dim_staff(department_df, staff_df)
+                    elif table_name == "staff":
+                        if department_df:
+                            staff_df = pd.DataFrame(data, index=['staff_id'])
+                            df = conversion_for_dim_staff(department_df, staff_df)
+                            wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
+                    
+                    elif table_name == "location":
+                        location_df = pd.DataFrame(data, index=['address_id'])
+                        df = conversion_for_dim_location(location_df)
                         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-                
-                elif table_name == "location":
-                    location_df = pd.DataFrame(data, index=['address_id'])
-                    df = conversion_for_dim_location(location_df)
-                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
 
-                elif table_name == "design":
-                    design_df = pd.DataFrame(data, index=['design_id'])
-                    df = conversion_for_dim_design(design_df)
-                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-                
-                elif table_name == "currency":
-                    currency_df = pd.DataFrame(data, index=['currency_id'])
-                    df = conversion_for_dim_currency(currency_df)
-                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')   
+                    elif table_name == "design":
+                        design_df = pd.DataFrame(data, index=['design_id'])
+                        df = conversion_for_dim_design(design_df)
+                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
+                    
+                    elif table_name == "currency":
+                        currency_df = pd.DataFrame(data, index=['currency_id'])
+                        df = conversion_for_dim_currency(currency_df)
+                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')   
 
-                elif table_name == "date":
-                    sales_df = pd.DataFrame(data, index=['staff_id'])
-                    df = conversion_for_dim_date(sales_df)
-                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')             
+                    elif table_name == "date":
+                        sales_df = pd.DataFrame(data, index=['staff_id'])
+                        df = conversion_for_dim_date(sales_df)
+                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')             
 
-            else:
-                print("No match found.")
+                else:
+                    logger.error("No match found for key: {key_name}")
+
+    except KeyError as k:
+        logger.error(f"Error retrieving data, {k}")
+    except ClientError as c:
+        if c.response["Error"]["Code"] == "NoSuchKey":
+            logger.error(f"No object found - {key_name}")
+        elif c.response["Error"]["Code"] == "NoSuchBucket":
+            logger.error(f"No such bucket - {PROCESSED_ZONE_BUCKET}")
+        else:
+            raise
+    except UnicodeError:
+        logger.error(f"File {key_name} is not a valid text file")
+    except Exception as e:
+        logger.error(e)
+        raise RuntimeError
 
 
 # conversion_for_fact_sales_order('load/src/sales_order-23_42_58.245848.json')

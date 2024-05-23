@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 # Patch environment variables for both S3 buckets
 with patch.dict(os.environ, {"ingestion_zone_bucket": "test_ingestion_bucket", "processed_data_zone_bucket": "test_processed_bucket"}):
-    from transform.src.transform_lambda import (
+    from transform.src.processed_lambda import (
         conversion_for_dim_location,
         conversion_for_dim_currency,
         conversion_for_dim_design,
