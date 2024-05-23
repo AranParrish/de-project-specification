@@ -248,6 +248,14 @@ def lambda_handler(event, context):
         raise RuntimeError
 
 
+def get_object_path(records):
+    """Extracts object references from Records field of event."""
+    return records[0]["s3"]["object"]["key"]
+
+class InvalidFileTypeError(Exception):
+    """Traps error where file type is not txt."""
+    pass
+
 # conversion_for_fact_sales_order('load/src/sales_order-23_42_58.245848.json')
 
 
