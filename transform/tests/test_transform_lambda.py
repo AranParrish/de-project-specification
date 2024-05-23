@@ -42,7 +42,7 @@ def test_ingestion_bucket(s3):
         Bucket="test_ingestion_bucket",
         CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
     )
-    with open("transform/tests/test_data/sales_order-15_36_42.731009.json") as f:
+    with open("transform/tests/data/sales_order.json") as f:
         text_to_write = f.read()
         s3.put_object(
             Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/sales_order-15_36_42.731009.json"
@@ -60,31 +60,34 @@ def test_processed_bucket(s3):
 
 # Add tests for writing to the processed data bucket
 
-
+# checks the number of files in test_ingestion_bucket are the same in the test_processed_bucket
 @pytest.mark.describe('Transform lambda handler tests')
 class TestTransfomLambdaHandler:
 
     @mock_aws(config={"s3": {"use_docker": False}})
-    @pytest.mark.it('Initilisation test')
+    @pytest.mark.it('Initialisation test')
     def test_transform_lambda_initilisation(self, test_ingestion_bucket, test_processed_bucket, s3):
         lambda_handler({}, None)
         assert s3.list_objects_v2(Bucket='test_ingestion_bucket')['KeyCount'] == s3.list_objects_v2(Bucket='test_processed_bucket')['KeyCount']
         
-    
+# checks the parquet files has the required columns as specified in the schema
+
     @mock_aws(config={"s3": {"use_docker": False}})
     @pytest.mark.it('Check Object Key Content')
     def test_transform_lambda_content(self, test_ingestion_bucket, test_processed_bucket, s3):
         lambda_handler({}, None)
-        response = s3.get_object(Bucket='test_processed_bucket', Key= "2024-05-21/sales_order-15_36_42.731009.parquet" )
-        
-        df = wr.s3.read_parquet(path=f"s3://test_processed_bucket/2024-05-21/sales_order-15_36_42.731009.parquet")
+        response = s3.get_object(Bucket='test_processed_bucket', Key= "2024-05-21/fact_sales_order-15_36_42.731009.parquet" )
+
+        df = wr.s3.read_parquet(path=f"s3://test_processed_bucket/2024-05-21/fact_sales_order-15_36_42.731009.parquet")
         
         expected = ['sales_record_id', 'sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
        'units_sold', 'unit_price', 'currency_id', 'agreed_delivery_date',
        'agreed_payment_date', 'agreed_delivery_location_id', 'created_date',
        'created_time', 'last_updated_date', 'last_updated_time']
-        
         assert all([ col in expected for col in df.columns])
+
+    
             
         
+
     
