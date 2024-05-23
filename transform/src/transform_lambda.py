@@ -17,7 +17,6 @@ PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
 def conversion_for_dim_location(df):
     df = df.drop(["created_at", "last_updated"], axis=1)
     df.rename(columns={"address_id": "location_id"}, inplace=True)
-    df = df.set_index("location_id")
     df = df.convert_dtypes()
 
     return  df
@@ -36,7 +35,6 @@ def conversion_for_dim_currency(df):
             df.loc[i, "currency_name"] = "US Dollar"
         elif df.loc[i, "currency_code"] == "EUR":
             df.loc[i, "currency_name"] = "Euro"
-    df = df.set_index("currency_id")
     df = df.convert_dtypes()
     return  df
 
@@ -46,7 +44,6 @@ def conversion_for_dim_currency(df):
 
 def conversion_for_dim_design(df):
     df = df.drop(["created_at", "last_updated"], axis=1)
-    df = df.set_index("design_id")
     df = df.convert_dtypes()
     return df
 
@@ -66,7 +63,6 @@ def conversion_for_dim_counterparty(ad_df, cp_df):
     df = df.drop("legal_address_id", axis=1)
 
     df.rename(columns={"address_id": "legal_address_id"}, inplace=True)
-    df = df.set_index("counterparty_id")
     df = df.convert_dtypes()
     return df
 
@@ -79,7 +75,6 @@ def conversion_for_dim_staff(dep_df, staff_df):
     dep_df = dep_df[["department_id", "department_name", "location"]]
     df = pd.merge(staff_df, dep_df, on="department_id", how="left")
     df = df.drop("department_id", axis=1)
-    df = df.set_index("staff_id")
     df = df.convert_dtypes()
     return df
 
@@ -140,7 +135,6 @@ def conversion_for_dim_date(sales_order_df):
     ]
     dim_date_df = pd.concat(frames)
     dim_date_df = dim_date_df.drop_duplicates()
-    dim_date_df = dim_date_df.set_index('date_id')
 
     return  dim_date_df
 
@@ -151,7 +145,7 @@ def conversion_for_dim_date(sales_order_df):
 def conversion_for_fact_sales_order(sales_order_df):
     
     df = sales_order_df
-    df["sales_record_id"] = df.index
+    df["sales_record_id"] = [i for i in range(len(df))]
     df.created_at = df.created_at.astype("datetime64[ns]")
     df.last_updated = df.last_updated.astype("datetime64[ns]")
     df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
@@ -166,7 +160,6 @@ def conversion_for_fact_sales_order(sales_order_df):
 
     df.drop(["created_at", "last_updated"], axis=1, inplace=True)
     df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
-    df = df.set_index("sales_record_id")
 
     return df
     
@@ -191,7 +184,7 @@ def lambda_handler(event, context):
                 
                 if table_name == "sales_order":
                     # Convert JSON data to DataFrame
-                    df = pd.DataFrame(data, index=['staff_id'])
+                    df = pd.DataFrame(data, index=['sales_order_id'])
                     df = conversion_for_fact_sales_order(df)
                     wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
                     
