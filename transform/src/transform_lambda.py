@@ -1,15 +1,15 @@
 import pandas as pd
-import logging, boto3, os, re
+import logging, boto3, os, re, json
 from datetime import datetime
 import awswrangler as wr
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# INGESTION_ZONE_BUCKET = os.environ["ingestion_zone_bucket"]
-# PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
-INGESTION_ZONE_BUCKET = "de-team-heritage-ingestion-zone-20240521145550499200000002"
-PROCESSED_ZONE_BUCKET = "de-team-heritage-processed-data-zone-20240522081526993900000002"
+INGESTION_ZONE_BUCKET = os.environ["ingestion_zone_bucket"]
+PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
+# INGESTION_ZONE_BUCKET = "de-team-heritage-ingestion-zone-20240521145550499200000002"
+# PROCESSED_ZONE_BUCKET = "de-team-heritage-processed-data-zone-20240522081526993900000002"
 
 # this function takes in an address json file and restructures it to match the dim_location table
 
@@ -164,8 +164,19 @@ def conversion_for_dim_date(sales_order_file):
 
 
 def conversion_for_fact_sales_order(sales_order_file):
-    df = wr.s3.read_json([sales_order_file])
-    #df = pd.read_json(sales_order_file)
+    # df = wr.s3.read_json([sales_order_file])
+    # df = df.to_frame()
+    s3 = boto3.resource('s3')
+
+    # Retrieve JSON data from S3
+    obj = s3.Object(bucket_name, sales_order_file_key)
+    file_content = obj.get()['Body'].read().decode('utf-8')
+    data = json.loads(file_content)
+
+    # Convert JSON data to DataFrame
+    df = pd.DataFrame(data)
+
+    # df = pd.read_json(sales_order_file)
     print(df)
     df["sales_record_id"] = df.index
     df.last_updated = df.last_updated.astype("datetime64[ns]")
@@ -202,7 +213,6 @@ def lambda_handler(event, context):
         department_key = ""
         address_key = ""
         for bucket_key in ingestion_files["Contents"]:
-            #print(bucket_key['Key'][11:])
             pattern = re.compile(r"(['/'])(\w+)")
             match = pattern.search(bucket_key["Key"])
             key_name = bucket_key["Key"]
@@ -212,36 +222,39 @@ def lambda_handler(event, context):
 
                 if table_name == "sales_order":
                     df = conversion_for_fact_sales_order(f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
-                    #df = conversion_for_fact_sales_order(bucket_key['Key'][11:])
-                    #df = conversion_for_fact_sales_order(bucket_key['Key'])
-                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name}.parquet')
-                    put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
                     
                 elif table_name == "address":
                     address_key = f"s3://{INGESTION_ZONE_BUCKET}/{key_name}"
                 
                 elif table_name == "counterparty":
                     if address_key:
-                        df = conversion_for_dim_counterparty(
-                            address_key, f"s3://{INGESTION_ZONE_BUCKET}/{key_name}"
-                        )
-                        #df.to_parquet(f"{key_name}.parquet")
-                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name}.parquet')
-                        #put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
+                        df = conversion_for_dim_counterparty(address_key, f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
+                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
                 
                 elif table_name == "department":
                     department_key = f"s3://{INGESTION_ZONE_BUCKET}/{key_name}"
+
                 elif table_name == "staff":
                     if department_key:
                         df = conversion_for_dim_staff(department_key, f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
-                        df.to_parquet(f"{key_name}.parquet")
-                        #put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
+                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
                 
-                elif table_name == "":
-                    df = function_name(f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
-                    df.to_parquet(f"{key_name}.parquet")
-                    #put_parquet_into_bucket(client, f"transform/src/{key_name}.parquet", f"{key_name}.parquet")
+                elif table_name == "location":
+                    df = conversion_for_dim_location(f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
 
+                elif table_name == "design":
+                    df = conversion_for_dim_design(f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
+                
+                elif table_name == "currency":
+                    df = conversion_for_dim_currency(f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')   
+
+                elif table_name == "date":
+                    df = conversion_for_dim_date(f"s3://{INGESTION_ZONE_BUCKET}/{key_name}")
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')             
 
             else:
                 print("No match found.")

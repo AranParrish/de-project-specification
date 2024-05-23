@@ -58,11 +58,12 @@ def test_processed_bucket(s3):
 
 # Add tests for writing to the processed data bucket
 
+
 @pytest.mark.describe('Transform lambda handler tests')
 class TestTransfomLambdaHandler:
 
+    @mock_aws(config={"s3": {"use_docker": False}})
     @pytest.mark.it('Initilisation test')
     def test_transform_lambda_initilisation(self, test_ingestion_bucket, test_processed_bucket, s3):
         lambda_handler({}, None)
         assert s3.list_objects_v2(Bucket='test_ingestion_bucket')['KeyCount'] == s3.list_objects_v2(Bucket='test_processed_bucket')['KeyCount']
-
