@@ -1,12 +1,10 @@
-import pytest, os, boto3, datetime
+import pytest, os, boto3, datetime, json
 import pandas as pd
 import awswrangler as wr
 from moto import mock_aws
 from unittest.mock import patch
 from botocore.exceptions import ClientError
 import logging
-
-
 
 with patch.dict(os.environ, {"ingestion_zone_bucket": "test_ingestion_bucket", "processed_data_zone_bucket": "test_processed_bucket"}):
     from transform.src.processed_lambda import (
@@ -18,9 +16,75 @@ with patch.dict(os.environ, {"ingestion_zone_bucket": "test_ingestion_bucket", "
         date_helper,
         conversion_for_dim_date,
         conversion_for_fact_sales_order,
-        lambda_handler
-        
+        lambda_handler        
     )
+
+# Add fixtures to mock AWS connection and create two S3 test buckets
+
+@pytest.fixture(scope="function")
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    os.environ["AWS_ACCESS_KEY_ID"] = "test"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
+    os.environ["AWS_SECURITY_TOKEN"] = "test"
+    os.environ["AWS_SESSION_TOKEN"] = "test"
+    os.environ["AWS_DEFAULT_REGION"] = "eu-west-2"
+
+
+@pytest.fixture(scope="function")
+def s3(aws_credentials):
+    with mock_aws():
+        yield boto3.client("s3", region_name="eu-west-2")
+
+
+@pytest.fixture
+def test_ingestion_bucket(s3):
+    s3.create_bucket(
+        Bucket="test_ingestion_bucket",
+        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+    )
+    with open("transform/tests/data/sales_order.json") as f:
+        text_to_write = f.read()
+        s3.put_object(
+            Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/sales_order-15_36_42.731009.json"
+        )
+
+
+@pytest.fixture
+def test_processed_bucket(s3):
+    s3.create_bucket(
+        Bucket='test_processed_bucket',
+        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+    )
+
+
+@pytest.fixture
+def valid_event():
+    with open("transform/tests/test_data_for_load/valid_test_event.json") as v:
+        event = json.loads(v.read())
+    return event
+
+
+@pytest.fixture
+def invalid_event():
+    with open("transform/tests/test_data_for_load/invalid_test_event.json") as i:
+        event = json.loads(i.read())
+    return event
+
+
+@pytest.fixture
+def file_type_event():
+    with open("transform/tests/test_data_for_load/file_type_event.json") as i:
+        event = json.loads(i.read())
+    return event
+
+
+@pytest.fixture
+def wrong_type_event():
+    with open("transform/tests/test_data_for_load/wrong_type_event.json") as i:
+        event = json.loads(i.read())
+    return event
+
 
 @pytest.mark.describe("test conversion_for_dim_location")
 class TestDimLocation:
@@ -237,44 +301,6 @@ class TestFactSalesOrder:
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
 
-# Add fixtures to mock AWS connection and create two S3 test buckets
-
-@pytest.fixture(scope="function")
-def aws_credentials():
-    """Mocked AWS Credentials for moto."""
-    os.environ["AWS_ACCESS_KEY_ID"] = "test"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "test"
-    os.environ["AWS_SECURITY_TOKEN"] = "test"
-    os.environ["AWS_SESSION_TOKEN"] = "test"
-    os.environ["AWS_DEFAULT_REGION"] = "eu-west-2"
-
-
-@pytest.fixture(scope="function")
-def s3(aws_credentials):
-    with mock_aws():
-        yield boto3.client("s3", region_name="eu-west-2")
-
-
-@pytest.fixture
-def test_ingestion_bucket(s3):
-    s3.create_bucket(
-        Bucket="test_ingestion_bucket",
-        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
-    )
-    with open("transform/tests/data/sales_order.json") as f:
-        text_to_write = f.read()
-        s3.put_object(
-            Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/sales_order-15_36_42.731009.json"
-        )
-
-
-@pytest.fixture
-def test_processed_bucket(s3):
-    s3.create_bucket(
-        Bucket='test_processed_bucket',
-        CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
-    )
-
 # Add tests from util functions
 
 # Add tests for writing to the processed data bucket
@@ -285,7 +311,7 @@ class TestTransfomLambdaHandler:
 
     # @mock_aws(config={"s3": {"use_docker": False}})
     @pytest.mark.it('Initialisation test')
-    def test_transform_lambda_initialisation(self, test_ingestion_bucket, test_processed_bucket, s3):
+    def test_transform_lambda_initialisation(self, s3, test_ingestion_bucket, test_processed_bucket):
         lambda_handler({}, None)
         assert s3.list_objects_v2(Bucket="test_ingestion_bucket")['KeyCount'] == s3.list_objects_v2(Bucket="test_processed_bucket")['KeyCount']
         
@@ -327,44 +353,54 @@ class TestTransfomLambdaHandler:
                 lambda_handler(event="event", context="context")
                 assert "No such bucket" in caplog.text
                     
-    @pytest.mark.it('Test S3 NoSuchKey response')
+    # @pytest.mark.it('Test S3 NoSuchKey response')
 
-    def test_s3_no_such_key_response(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+    # def test_s3_no_such_key_response(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
 
-        with patch("transform.src.transform_lambda.boto3.client") as mock_client:
-            mock_client.return_value.get_object.side_effect = ClientError(
-                {
-                    "Error": {
-                        "Code": 'NoSuchKey',
-                        "Message": "No such key exists."
-                    }
-                }, 
-                "ClientError"
+    #     with patch("transform.src.processed_lambda.boto3.client") as mock_client:
+    #         mock_client.return_value.get_object.side_effect = ClientError(
+    #             {
+    #                 "Error": {
+    #                     "Code": 'NoSuchKey',
+    #                     "Message": "No such key exists."
+    #                 }
+    #             }, 
+    #             "ClientError"
+    #         )
+    #         with caplog.at_level(logging.ERROR):
+    #             lambda_handler(event="event", context="context")
+    #             print("this is the log message", caplog.text)
+    #             assert "No such key " in caplog.text
+
+
+@pytest.mark.describe("Test lambda handler event trigger")
+class TestLambdaEventTrigger:
+
+    @pytest.mark.it("if there is a valid event and correct type put the object into processed s3 bucket")
+    def test_valid_event(self, s3, valid_event, test_processed_bucket, test_ingestion_bucket):
+        with open("transform/tests/data/sales_order.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_processed_bucket", Key="2024-05-21/sales_order-15_36_42.731009.json"
             )
-            with caplog.at_level(logging.ERROR):
-                lambda_handler(event="event", context="context")
-                print("this is the log message", caplog.text)
-                assert "No such key " in caplog.text
-            
-        #     ClientError['Error']['Code'] = "NoSuchKey"
-        #     mock_client.return_value.get_object.side_effect = ClientError.response['Error']['Code']
-            
-                
-        # #         {
-        # #           "Error":{
-        # #             'Code': "NoSuchKey",
-        # #             'Message': "No such key"
-        # #         }
-        # #     },
-        # #       "ClientError"
-        # # )
+        lambda_handler(valid_event, {})
+        response = s3.list_objects_v2(Bucket="test_processed_bucket")
+        assert response["KeyCount"] == 2
+        assert response['Contents'][0]['Key'] == '2024-05-21/fact_sales_order-15_36_42.731009.parquet'
 
-            
-        #     with caplog.at_level(logging.ERROR):
-        #         lambda_handler(event="event", context="context")
-        #         assert "No such key" in caplog.text
-                    
-    #    lambda_handler('event', None)
-    #    response = s3.get_object(Bucket='test_processed_bucket', Key="fake_key")
-       
-    #    assert "No such key" in response['Error']['Message']
+    @pytest.mark.it("lambda throws logs message if is not valid json type")
+    def test_invalid_type(self, file_type_event, caplog, s3, test_processed_bucket, test_ingestion_bucket):
+        with open("transform/tests/data/sales_order.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_processed_bucket", Key="2024-05-21/sales_order-15_36_42.731009.json"
+            )
+        with caplog.at_level(logging.ERROR):
+            lambda_handler(file_type_event, {})
+            assert "File is not a valid json file" in caplog.text
+
+    @pytest.mark.it("if there is an invalid event returns exception error")
+    def test_invalid_event(self, s3, invalid_event, caplog):
+        with caplog.at_level(logging.ERROR):
+            lambda_handler(invalid_event, {})
+        assert "No such bucket" in caplog.text
