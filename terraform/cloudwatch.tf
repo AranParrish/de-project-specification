@@ -57,3 +57,30 @@ resource "aws_iam_policy" "processed_cloudwatch_logs_policy" {
     ]
   })
 }
+
+# For load lambda
+
+# Create IAM policy for CloudWatch Logs permissions for load lambda function
+resource "aws_iam_policy" "load_cloudwatch_logs_policy" {
+  name        = "LoadCloudWatchLogsPermissions"
+  description = "IAM policy for load lambda CloudWatch Logs permissions"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents"
+        ]
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.load_lambda_name}:*"
+      }
+    ]
+  })
+}

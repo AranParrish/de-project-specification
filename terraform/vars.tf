@@ -19,3 +19,8 @@ variable "processed_lambda_name" {
     type = string
     default = "processed-lambda"
 }
+
+variable "load_lambda_name" {
+    type = string
+    default = "load-lambda"
+}
