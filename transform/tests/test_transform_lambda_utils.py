@@ -1,29 +1,27 @@
 import pandas as pd
-import pytest
-import datetime
+import pytest, datetime, os
+from unittest.mock import patch
 
-from transform.src.transform_lambda_utils import conversion_for_dim_location,\
-    conversion_for_dim_currency, conversion_for_dim_design, \
-    conversion_for_dim_counterparty, conversion_for_dim_staff, \
-    date_helper, conversion_for_dim_date, conversion_for_fact_sales_order
+with patch.dict(os.environ, {"ingestion_zone_bucket": "temp", "processed_data_zone_bucket": "temp2"}):
+    from transform.src.transform_lambda import conversion_for_dim_counterparty, \
+        conversion_for_dim_currency, conversion_for_dim_date, conversion_for_dim_design, \
+        conversion_for_dim_location, conversion_for_dim_staff, conversion_for_fact_sales_order, \
+        date_helper
 
 @pytest.mark.describe("test conversion_for_dim_location")
 class TestDimLocation:
     input_file = 'transform/tests/data/address.json'
-    output_df = conversion_for_dim_location(input_file)
+    location_df = pd.read_json(input_file)
+    output_df = conversion_for_dim_location(location_df)
 
     @pytest.mark.it("check the number of columns without primary key column")
     def test_number_of_columns(self):
-        assert len(self.output_df.columns) == 7
+        assert len(self.output_df.columns) == 8
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        expected_columns = ['address_line_1','address_line_2','district','city','postal_code','country','phone']
+        expected_columns = ['location_id', 'address_line_1','address_line_2','district','city','postal_code','country','phone']
         assert list(self.output_df.columns) == expected_columns
-
-    @pytest.mark.it("check index column is location_id")
-    def test_index_column_is_location_id(self):
-        assert self.output_df.index.name == 'location_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
@@ -34,19 +32,17 @@ class TestDimLocation:
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
 
+
 @pytest.mark.describe("test conversion_for_dim_currency")
 class TestDimCurrency:
     input_file = 'transform/tests/data/currency.json'
-    output_df = conversion_for_dim_currency(input_file)
+    currency_df = pd.read_json(input_file)
+    output_df = conversion_for_dim_currency(currency_df)
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        expected_columns = ['currency_code','currency_name']
+        expected_columns = ['currency_id', 'currency_code','currency_name']
         assert list(self.output_df.columns) == expected_columns
-
-    @pytest.mark.it("check index column is currency_id")
-    def test_index_column_is_location_id(self):
-        assert self.output_df.index.name == 'currency_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
@@ -56,20 +52,18 @@ class TestDimCurrency:
     @pytest.mark.it("check output is a dataframe")
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
-    
+
+
 @pytest.mark.describe("test conversion_for_dim_design")
 class TestDimDesign:
     input_file = 'transform/tests/data/design.json'
-    output_df = conversion_for_dim_design(input_file)
+    design_df = pd.read_json(input_file)
+    output_df = conversion_for_dim_design(design_df)
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        expected_columns = ['design_name','file_location','file_name']
+        expected_columns = ['design_id', 'design_name','file_location','file_name']
         assert list(self.output_df.columns) == expected_columns
-
-    @pytest.mark.it("check index column is design_id")
-    def test_index_column_is_location_id(self):
-        assert self.output_df.index.name == 'design_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
@@ -79,22 +73,21 @@ class TestDimDesign:
     @pytest.mark.it("check output is a dataframe")
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
+
 
 @pytest.mark.describe("test conversion_for_dim_counterparty")
 class TestDimCounterparty:
     
     input_ad_file = 'transform/tests/data/address.json'
     input_cp_file = 'transform/tests/data/counterparty.json'
-    output_df = conversion_for_dim_counterparty(input_ad_file,input_cp_file)
+    address_df = pd.read_json(input_ad_file)
+    counterparty_df = pd.read_json(input_cp_file)
+    output_df = conversion_for_dim_counterparty(address_df,counterparty_df)
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        expected_columns = ['counterparty_legal_name', 'counterparty_legal_address_line_1','counterparty_legal_address_line_2','counterparty_legal_district','counterparty_legal_city','counterparty_legal_postal_code','counterparty_legal_country','counterparty_legal_phone_number']
+        expected_columns = ['counterparty_id', 'counterparty_legal_name', 'counterparty_legal_address_line_1','counterparty_legal_address_line_2','counterparty_legal_district','counterparty_legal_city','counterparty_legal_postal_code','counterparty_legal_country','counterparty_legal_phone_number']
         assert list(self.output_df.columns) == expected_columns
-
-    @pytest.mark.it("check index column is counterparty_id")
-    def test_index_column_is_location_id(self):
-        assert self.output_df.index.name == 'counterparty_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
@@ -104,23 +97,21 @@ class TestDimCounterparty:
     @pytest.mark.it("check output is a dataframe")
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
+
 
 @pytest.mark.describe("test conversion_for_dim_staff")
 class TestDimStaff:
     input_dep_file = 'transform/tests/data/department.json'
     input_staff_file = 'transform/tests/data/staff.json'
-    output_df = conversion_for_dim_staff(input_dep_file,input_staff_file)
+    department_df = pd.read_json(input_dep_file)
+    staff_df = pd.read_json(input_staff_file)
+    output_df = conversion_for_dim_staff(department_df,staff_df)
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        expected_columns = ['first_name','last_name','department_name','location','email_address']
+        expected_columns = ['staff_id', 'first_name','last_name','department_name','location','email_address']
         for column in self.output_df.columns:
             assert column in expected_columns
-
-
-    @pytest.mark.it("check index column is staff_id")
-    def test_index_column_is_location_id(self):
-        assert self.output_df.index.name == 'staff_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
@@ -130,6 +121,7 @@ class TestDimStaff:
     @pytest.mark.it("check output is a dataframe")
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
+
 
 @pytest.mark.describe("test date_helper")
 class TestDimDateHelper:
@@ -165,42 +157,39 @@ class TestDimDateHelper:
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
 
+
 @pytest.mark.describe("test conversion_for_dim_date_tb")
 class TestDimDateTb:
     input_file = 'transform/tests/data/sales_order.json'
-    output_df = conversion_for_dim_date(input_file)
+    date_df = pd.read_json(input_file)
+    output_df = conversion_for_dim_date(date_df)
 
     @pytest.mark.it("check there are no duplicate rows")
     def test_no_duplicate_rows(self):
         result = self.output_df.duplicated()
-        for index, value in result.items():
-            assert value == False
-
-    @pytest.mark.it("check index column is date_id")
-    def test_index_column_is_date_id(self):
-        assert self.output_df.index.name == 'date_id'
+        assert all([value == False for value in result.values])
 
     @pytest.mark.it("check output is a dataframe")
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
 
+
 @pytest.mark.describe("test conversion_for_fact_sales_order")
 class TestFactSalesOrder:
     input_file = 'transform/tests/data/sales_order.json'
-    output_df = conversion_for_fact_sales_order(input_file)
+    sales_df = pd.read_json(input_file)
+    output_df = conversion_for_fact_sales_order(sales_df)
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        expected_columns = ["sales_order_id","created_date","created_time","last_updated_date","last_updated_time","sales_staff_id","counterparty_id","units_sold","unit_price","currency_id","design_id","agreed_payment_date","agreed_delivery_date","agreed_delivery_location_id"]
+        expected_columns = ["sales_record_id", "sales_order_id","created_date","created_time","last_updated_date","last_updated_time","sales_staff_id","counterparty_id","units_sold","unit_price","currency_id","design_id","agreed_payment_date","agreed_delivery_date","agreed_delivery_location_id"]
         for column in self.output_df.columns:
             assert column in expected_columns
 
-    @pytest.mark.it("check index column is sales_record_id")
-    def test_index_column_is_location_id(self):
-        assert self.output_df.index.name == 'sales_record_id'
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
+        assert self.output_df.sales_record_id.dtype == 'int64'
         assert self.output_df.sales_order_id.dtype == 'int64'
         assert self.output_df.design_id.dtype == 'int64'
         assert self.output_df.sales_staff_id.dtype == 'int64'
@@ -233,5 +222,3 @@ class TestFactSalesOrder:
     @pytest.mark.it("check output is a dataframe")
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
-
-

@@ -5,3 +5,6 @@ pytest-testdox
 moto[s3]
 pg8000
 python-dotenv
+pandas
+awswrangler
+s3fs
