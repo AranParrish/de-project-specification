@@ -305,7 +305,7 @@ class TestTransfomLambdaHandler:
         assert all([ col in expected for col in df.columns])
 
     @pytest.mark.it('Test CLientError response')
-    def test_client_error_response(self, caplog):
+    def test_client_error_response(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
         with patch("boto3.client") as mock_client:
             mock_client.return_value.list_objects_v2.side_effect = ClientError(
                 {
@@ -321,15 +321,30 @@ class TestTransfomLambdaHandler:
                 assert "Error InvalidClientTokenId: " in caplog.text
                 
     @pytest.mark.it('Test S3 NoSuchBucket response')
-    def test_s3_no_such_bucket_response(self, caplog):
-        with patch.dict(os.environ,{"ingestion_zone_bucket": "fake_ingestion_bucket"}):
-            with caplog.at_level(logging.ERROR):
-                    lambda_handler(event="event", context="context")
-                    assert "No such bucket" in caplog.text
+    def test_s3_no_such_bucket_response(self, caplog, s3):
+        # with patch.dict(os.environ,{"ingestion_zone_bucket": "fake_ingestion_bucket"}):
+        with caplog.at_level(logging.ERROR):
+                lambda_handler(event="event", context="context")
+                assert "No such bucket" in caplog.text
                     
     @pytest.mark.it('Test S3 NoSuchKey response')
-    def test_s3_no_such_bucket_response(self, caplog, s3):
-        # with patch("boto3.client") as mock_client:
+
+    def test_s3_no_such_key_response(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+
+        with patch("transform.src.transform_lambda.boto3.client") as mock_client:
+            mock_client.return_value.get_object.side_effect = ClientError(
+                {
+                    "Error": {
+                        "Code": 'NoSuchKey',
+                        "Message": "No such key exists."
+                    }
+                }, 
+                "ClientError"
+            )
+            with caplog.at_level(logging.ERROR):
+                lambda_handler(event="event", context="context")
+                print("this is the log message", caplog.text)
+                assert "No such key " in caplog.text
             
         #     ClientError['Error']['Code'] = "NoSuchKey"
         #     mock_client.return_value.get_object.side_effect = ClientError.response['Error']['Code']
@@ -349,7 +364,7 @@ class TestTransfomLambdaHandler:
         #         lambda_handler(event="event", context="context")
         #         assert "No such key" in caplog.text
                     
-       lambda_handler('event', None)
-       response = s3.get_object(Bucket='test_processed_bucket', Key="fake_key")
+    #    lambda_handler('event', None)
+    #    response = s3.get_object(Bucket='test_processed_bucket', Key="fake_key")
        
-       assert "No such key" in response['Error']['Message']
+    #    assert "No such key" in response['Error']['Message']
