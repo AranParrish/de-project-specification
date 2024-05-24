@@ -168,6 +168,7 @@ def conversion_for_fact_sales_order(sales_order_df):
 def lambda_handler(event, context):
     try:
         client = boto3.client("s3")
+
         if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
             ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
             department_df = ""
@@ -247,6 +248,9 @@ def lambda_handler(event, context):
         logger.error(e)
         raise RuntimeError
 
+class InvalidFileTypeError(Exception):
+    """Traps error where file type is not txt."""
+    pass
 
 def get_object_path(records):
     """Extracts object references from Records field of event."""
