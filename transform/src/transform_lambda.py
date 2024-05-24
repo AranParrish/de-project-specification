@@ -2,6 +2,8 @@ import pandas as pd
 import logging, boto3, os, re, json
 from datetime import datetime
 import awswrangler as wr
+from botocore.exceptions import ClientError
+import botocore.errorfactory
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -164,76 +166,81 @@ def conversion_for_fact_sales_order(sales_order_df):
     
 
 def lambda_handler(event, context):
-    client = boto3.client("s3")
-    if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
-        ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
-        department_df = ""
-        address_df = ""
-        for bucket_key in ingestion_files["Contents"]:
-            key_name = bucket_key["Key"]
-            pattern = re.compile(r"(['/'])(\w+)")
-            match = pattern.search(key_name)
-            table_name = match.group(2)
-            print(bucket_key)
-            print(key_name)
-            print(table_name)
-        
-            # Retrieve JSON data from S3
-            resp = client.get_object(Bucket = INGESTION_ZONE_BUCKET, Key= key_name)
-            file_content = resp['Body'].read().decode('utf-8')
-            data = json.loads(file_content)
-                
-            if "sales_order" in key_name:
-            # if table_name == "sales_order":
-                # Convert JSON data to DataFrame
-                df = pd.DataFrame(data)
-                new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
-                df = conversion_for_fact_sales_order(df)
-                wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+    try:
+        client = boto3.client("s3")
+        if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
+            ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
+            department_df = ""
+            address_df = ""
+            for bucket_key in ingestion_files["Contents"]:
+                key_name = bucket_key["Key"]
+                pattern = re.compile(r"(['/'])(\w+)")
+                match = pattern.search(key_name)
+                table_name = match.group(2)
+            
+                # Retrieve JSON data from S3
+                resp = client.get_object(Bucket = INGESTION_ZONE_BUCKET, Key= key_name)
+                file_content = resp['Body'].read().decode('utf-8')
+                data = json.loads(file_content)
                     
-            elif "address" in key_name:
-                address_df = pd.DataFrame(data)
-                df = conversion_for_dim_location(address_df)
-                new_file_name = re.sub(table_name, 'dim_location', key_name)
-                wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
-                                
-            elif "counterparty" in key_name:
-                if address_df:
-                    counterparty_df = pd.DataFrame(data)
-                    df = conversion_for_dim_counterparty(address_df, counterparty_df)
+                if "sales_order" in key_name:
+                    # Convert JSON data to DataFrame
+                    df = pd.DataFrame(data)
+                    new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
+                    df = conversion_for_fact_sales_order(df)
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+                        
+                elif "address" in key_name:
+                    address_df = pd.DataFrame(data)
+                    df = conversion_for_dim_location(address_df)
+                    new_file_name = re.sub(table_name, 'dim_location', key_name)
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+                                    
+                elif "counterparty" in key_name:
+                    if address_df:
+                        counterparty_df = pd.DataFrame(data)
+                        df = conversion_for_dim_counterparty(address_df, counterparty_df)
+                        new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
+                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+                
+                elif "department" in key_name:
+                    department_df = pd.DataFrame(data)
+
+                elif "staff" in key_name:
+                    if department_df:
+                        staff_df = pd.DataFrame(data)
+                        df = conversion_for_dim_staff(department_df, staff_df)
+                        new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
+                        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+
+                elif "design" in key_name:
+                    design_df = pd.DataFrame(data)
+                    df = conversion_for_dim_design(design_df)
                     new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
                     wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
-            
-            elif "department" in key_name:
-                department_df = pd.DataFrame(data)
-
-            elif "staff" in key_name:
-                if department_df:
-                    staff_df = pd.DataFrame(data)
-                    df = conversion_for_dim_staff(department_df, staff_df)
+                
+                elif "currency" in key_name:
+                    currency_df = pd.DataFrame(data)
+                    df = conversion_for_dim_currency(currency_df)
                     new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
-                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')   
 
-            elif "design" in key_name:
-                design_df = pd.DataFrame(data)
-                df = conversion_for_dim_design(design_df)
-                new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
-                wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
-            
-            elif "currency" in key_name:
-                currency_df = pd.DataFrame(data)
-                df = conversion_for_dim_currency(currency_df)
-                new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
-                wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')   
+                elif "date" in key_name:
+                    sales_df = pd.DataFrame(data)
+                    df = conversion_for_dim_date(sales_df)
+                    new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
+                    wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
 
-            elif "date" in key_name:
-                sales_df = pd.DataFrame(data)
-                df = conversion_for_dim_date(sales_df)
-                new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
-                wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
-
-            else:
-                print("No match found.")
+                else:
+                    print("No match found.")
+    except ClientError as e:
+        logger.error(f"Error InvalidClientTokenId: {e}")
+    except botocore.errorfactory.NoSuchBucket as e:
+        logger.error(f'No such bucket: {e}')
+    except client.exceptions.NoSuchKey as e:
+        logger.error(f'No such key: {e}')
+    except UnicodeDecodeError as e:
+        logger.error(f'Unable to decode the file: {e}')
 
 
 # conversion_for_fact_sales_order('load/src/sales_order-23_42_58.245848.json')
