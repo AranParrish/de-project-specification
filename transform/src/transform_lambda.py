@@ -233,14 +233,20 @@ def lambda_handler(event, context):
 
                 else:
                     print("No match found.")
+    except client.meta.exceptions.NoSuchKey as e:
+        logger.error("No such key: {e}")
+        
     except ClientError as e:
-        logger.error(f"Error InvalidClientTokenId: {e}")
-    except botocore.errorfactory.NoSuchBucket as e:
-        logger.error(f'No such bucket: {e}')
-    except client.exceptions.NoSuchKey as e:
-        logger.error(f'No such key: {e}')
+        if e.response['Error']['Code'] == 'NoSuchBucket':
+            logger.error(f"No such bucket: {e}")
+        elif e.response['Error']['Code'] == 'NoSuchKey':
+            logger.error(f"No such key: {e}")
+        else:
+            logger.error(f"Error InvalidClientTokenId: {e}")
+   
     except UnicodeDecodeError as e:
         logger.error(f'Unable to decode the file: {e}')
+    
 
 
 # conversion_for_fact_sales_order('load/src/sales_order-23_42_58.245848.json')

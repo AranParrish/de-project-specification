@@ -19,6 +19,7 @@ with patch.dict(os.environ, {"ingestion_zone_bucket": "test_ingestion_bucket", "
         conversion_for_dim_date,
         conversion_for_fact_sales_order,
         lambda_handler
+        
     )
 
 @pytest.mark.describe("test conversion_for_dim_location")
@@ -320,11 +321,35 @@ class TestTransfomLambdaHandler:
                 assert "Error InvalidClientTokenId: " in caplog.text
                 
     @pytest.mark.it('Test S3 NoSuchBucket response')
-    def test_s3_no_such_bucket_response(self, caplog, s3):
+    def test_s3_no_such_bucket_response(self, caplog):
         with patch.dict(os.environ,{"ingestion_zone_bucket": "fake_ingestion_bucket"}):
             with caplog.at_level(logging.ERROR):
                     lambda_handler(event="event", context="context")
-                    response = s3.list_objects_v2(Bucket="fake_ingestion_bucket")
-                    print(caplog.text)
-                    # print(response)
-                    assert "The specified bucket does not exist " in caplog.text
+                    assert "No such bucket" in caplog.text
+                    
+    @pytest.mark.it('Test S3 NoSuchKey response')
+    def test_s3_no_such_bucket_response(self, caplog, s3):
+        # with patch("boto3.client") as mock_client:
+            
+        #     ClientError['Error']['Code'] = "NoSuchKey"
+        #     mock_client.return_value.get_object.side_effect = ClientError.response['Error']['Code']
+            
+                
+        # #         {
+        # #           "Error":{
+        # #             'Code': "NoSuchKey",
+        # #             'Message': "No such key"
+        # #         }
+        # #     },
+        # #       "ClientError"
+        # # )
+
+            
+        #     with caplog.at_level(logging.ERROR):
+        #         lambda_handler(event="event", context="context")
+        #         assert "No such key" in caplog.text
+                    
+       lambda_handler('event', None)
+       response = s3.get_object(Bucket='test_processed_bucket', Key="fake_key")
+       
+       assert "No such key" in response['Error']['Message']
