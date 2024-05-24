@@ -166,58 +166,6 @@ def conversion_for_fact_sales_order(sales_order_df):
     return df
 
 
-
-# def process_file(client, key_name, department_df, address_df):
-#     pattern = re.compile(r"(['/'])(\w+)")
-#     match = pattern.search(key_name)
-#     if match:
-#         table_name = match.group(2)
-#         logger.info(f"Processing table: {table_name}")
-#         resp = client.get_object(Bucket=INGESTION_ZONE_BUCKET, Key=key_name)
-#         file_content = resp['Body'].read().decode('utf-8')
-#         data = json.loads(file_content)
-        
-#         if table_name == "sales_order":
-#             df = pd.DataFrame(data)
-#             print(df)
-#             df = conversion_for_fact_sales_order(df)
-#             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-#         elif table_name == "address":
-#             address_df = pd.DataFrame(data)
-#         elif table_name == "counterparty":
-#             if address_df:
-#                 counterparty_df = pd.DataFrame(data)
-#                 df = conversion_for_dim_counterparty(address_df, counterparty_df)
-#                 wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-#         elif table_name == "department":
-#             department_df = pd.DataFrame(data)
-#         elif table_name == "staff":
-#             if department_df:
-#                 staff_df = pd.DataFrame(data, index=['staff_id'])
-#                 df = conversion_for_dim_staff(department_df, staff_df)
-#                 wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-#         elif table_name == "location":
-#             location_df = pd.DataFrame(data, index=['address_id'])
-#             df = conversion_for_dim_location(location_df)
-#             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-#         elif table_name == "design":
-#             design_df = pd.DataFrame(data, index=['design_id'])
-#             df = conversion_for_dim_design(design_df)
-#             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-#         elif table_name == "currency":
-#             currency_df = pd.DataFrame(data, index=['currency_id'])
-#             df = conversion_for_dim_currency(currency_df)
-#             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-#         elif table_name == "date":
-#             sales_df = pd.DataFrame(data, index=['staff_id'])
-#             df = conversion_for_dim_date(sales_df)
-#             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{key_name[:-5]}.parquet')
-#     else:
-#         logger.error(f"No match found for key: {key_name}")
-
-# class InvalidFileTypeError(Exception):
-#     pass
-
 def process_file(client, key_name, department_df, address_df):
     pattern = re.compile(r"(['/'])(\w+)")
     match = pattern.search(key_name)
