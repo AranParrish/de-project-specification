@@ -133,8 +133,8 @@ resource "aws_lambda_function" "load_lambda" {
 
 data "archive_file" "load_lambda_zip" {
   type        = "zip"
-  source_file = "${path.module}/../transform/src/load_lambda.py"
-  output_path = "${path.module}/../transform/load_lambda.zip"
+  source_file = "${path.module}/../load/src/load_lambda.py"
+  output_path = "${path.module}/../load/load_lambda.zip"
 }
 
 # data "archive_file" "layer" {
