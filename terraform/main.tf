@@ -7,6 +7,7 @@ provider "aws" {
       tags = {
         Project = "Totesys Olap"
         Team = "Heritage"
+        Environment = "Dev"
       }
     }
 }

@@ -39,6 +39,4 @@ resource "aws_s3_bucket" "processed_s3" {
   }
 }
 
-# same iam_policy_document and policy for processed data zone
-
-
+# same iam_policy_document and policy for processed data zone and load lambda

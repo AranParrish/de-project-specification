@@ -54,8 +54,8 @@ resource "aws_iam_policy" "sm_policy" {
   })
 }
 
-# Attach Secrets Manager policy to lambda function role
-resource "aws_iam_role_policy_attachment" "lambda_sm_policy_attachment" {
+# Attach Secrets Manager policy to extract lambda function role
+resource "aws_iam_role_policy_attachment" "extract_lambda_sm_policy_attachment" {
     role = aws_iam_role.extract_lambda_role.name
     policy_arn  = aws_iam_policy.sm_policy.arn
 }
@@ -101,3 +101,52 @@ resource "aws_iam_role_policy_attachment" "processed_lambda_cloudwatch_logs_poli
 
 
 
+# Load lambda iam
+
+# Define the role and assume role policy
+resource "aws_iam_role" "load_lambda_role" {
+    
+    name_prefix = "role-${var.load_lambda_name}"
+    assume_role_policy = <<EOF
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "sts:AssumeRole"
+                ],
+                "Principal": {
+                    "Service": [
+                        "lambda.amazonaws.com"
+                    ]
+                }
+            }
+        ]
+    }
+    EOF
+}
+
+# Attach S3 policy to lambda function role for load lambda policy
+resource "aws_iam_role_policy_attachment" "load_lambda_s3_policy_attachment" {
+    role = aws_iam_role.load_lambda_role.name
+    policy_arn = aws_iam_policy.s3_policy.arn
+}
+
+# Attach CloudWatch Logs policy to the load lambda role
+resource "aws_iam_role_policy_attachment" "load_lambda_cloudwatch_logs_policy" {
+  role       = aws_iam_role.load_lambda_role.name
+  policy_arn = aws_iam_policy.load_cloudwatch_logs_policy.arn
+}
+
+# Attach SNS policy to processed_lambda role
+resource "aws_iam_role_policy_attachment" "load_lambda_role_sns_policy" {
+  role       = aws_iam_role.load_lambda_role.name
+  policy_arn = aws_iam_policy.sns_policy.arn
+}
+
+# Attach Secrets Manager policy to warehouse lambda function role
+resource "aws_iam_role_policy_attachment" "load_lambda_sm_policy_attachment" {
+    role = aws_iam_role.load_lambda_role.name
+    policy_arn  = aws_iam_policy.sm_policy.arn
+}
