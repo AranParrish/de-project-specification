@@ -217,20 +217,25 @@ class InvalidFileTypeError(Exception):
 
 
 def lambda_handler(event, context):
+    
     try:
         client = boto3.client("s3")
+        department_df = ""
+        address_df = ""
 
         if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
             ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
-            department_df = ""
-            address_df = ""
+
             for bucket_key in ingestion_files.get("Contents", []):
                 process_file(client, bucket_key["Key"], department_df, address_df)
-
         # Process only the new files added (triggered by the event)
-        for record in event['Records']:
-            s3_object_key = record['s3']['object']['key']
-            process_file(client, s3_object_key, department_df, address_df)
+        else:
+            for record in event['Records']:
+                s3_object_key = record['s3']['object']['key']
+                if s3_object_key[-4:] != 'json':
+                    logger.error(f"File is not a valid json file")
+                else:
+                    process_file(client, s3_object_key, department_df, address_df)
 
     except KeyError as k:
         logger.error(f"Error retrieving data, {k}")
@@ -241,8 +246,6 @@ def lambda_handler(event, context):
             logger.error(f"No such bucket")
         else:
             raise
-    except UnicodeError:
-        logger.error(f"It is not a valid text file")
     except Exception as e:
         logger.error(e)
         raise RuntimeError
