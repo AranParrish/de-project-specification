@@ -31,7 +31,7 @@ resource "aws_sns_topic" "extract_lambda_notifications" {
 }
 
 # Subscribe email endpoint to SNS topic
-resource "aws_sns_topic_subscription" "email_subscription" {
+resource "aws_sns_topic_subscription" "extract_email_subscription" {
   topic_arn = aws_sns_topic.extract_lambda_notifications.arn
   protocol  = "email"
   endpoint  = "ellybalci@gmail.com"
@@ -49,4 +49,35 @@ resource "aws_cloudwatch_metric_alarm" "extract_lambda_error_alarm" {
   threshold           = "1"
   alarm_description   = "Alarm when extract_lambda errors occur"
   alarm_actions       = [aws_sns_topic.extract_lambda_notifications.arn]
+}
+
+
+# For processed data
+
+# Same IAM policy for SNS permissions
+
+# Create SNS topic
+resource "aws_sns_topic" "processed_lambda_notifications" {
+  name = "processed_lambda-notifications"
+}
+
+# Subscribe email endpoint to SNS topic
+resource "aws_sns_topic_subscription" "processed_email_subscription" {
+  topic_arn = aws_sns_topic.processed_lambda_notifications.arn
+  protocol  = "email"
+  endpoint  = "ellybalci@gmail.com"
+}
+
+# Create CloudWatch alarm for processed_lambda errors
+resource "aws_cloudwatch_metric_alarm" "processed_lambda_error_alarm" {
+  alarm_name          = "ProcessedLambdaErrorAlarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "Errors"
+  namespace           = "AWS/processed_lambda"
+  period              = "60"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "Alarm when processed_lambda errors occur"
+  alarm_actions       = [aws_sns_topic.processed_lambda_notifications.arn]
 }

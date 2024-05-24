@@ -7,7 +7,6 @@ provider "aws" {
       tags = {
         Project = "Totesys Olap"
         Team = "Heritage"
-        Phase = "Extract"
       }
     }
 }
@@ -20,8 +19,3 @@ terraform {
     }
 }
 
-
-# resource "aws_sqs_queue" "queue" {
-#   name = "totesys-queue"
-#   visibility_timeout_seconds = 30
-# }
