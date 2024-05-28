@@ -1,5 +1,5 @@
 import pandas as pd
-import logging, boto3, os, re, json
+import logging, boto3, os, re, json, urllib
 from datetime import datetime
 import awswrangler as wr
 from botocore.exceptions import ClientError
@@ -245,8 +245,8 @@ def lambda_handler(event, context):
         
         # Process only the new files added (triggered by the event)
         else:
-            
-            s3_object_key = event['Records'][0]['s3']['object']['key']
+            print("event:", event)
+            s3_object_key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
             print("event triggered by s3 key:", s3_object_key)
             if s3_object_key[-4:] != 'json':
                 logger.error(f"File is not a valid json file")
