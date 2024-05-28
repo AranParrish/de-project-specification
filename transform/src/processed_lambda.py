@@ -87,8 +87,17 @@ def date_helper(date_df, column):
     """
     This function takes in a date dataframe and creates the columns needed for the dim_date table
     """
-    date_id = pd.date_range('2022-11-01', '2024-12-31', freq='D')
-    print(type(date_id.to_frame()))
+    date_df = pd.date_range('2022-11-01', '2024-12-31', freq='D').to_frame()
+    date_df['year'] = date_df[0].dt.year
+    date_df['month'] = date_df[0].dt.month
+    date_df['day'] = date_df[0].dt.day
+    date_df['day_of_week'] = date_df[0].dt.dayofweek
+    date_df['day_name'] = date_df[0].dt.day_name()
+    date_df['month_name'] = date_df[0].dt.month_name()
+    date_df['quarter'] = date_df[0].dt.quarter
+    date_df.rename(columns={0: "date_id"}, inplace = True)
+    print(date_df.head())
+ 
     with pd.option_context('mode.chained_assignment', None):
         date_df['date_id'] = date_df[column].dt.date
         date_df['year'] = date_df[column].dt.year

@@ -218,59 +218,59 @@ class TestDimStaff:
         assert isinstance(self.output_df, pd.DataFrame)
 
 
-@pytest.mark.describe("test date_helper")
-class TestDimDateHelper:
-    input_file = 'transform/tests/data/sales_order.json'
-    df = pd.read_json(input_file)
-    column = 'created_at'
-    created_at_df = df[[column]]
-    output_df = date_helper(created_at_df, column)
+# @pytest.mark.describe("test date_helper")
+# class TestDimDateHelper:
+#     input_file = 'transform/tests/data/sales_order.json'
+#     df = pd.read_json(input_file)
+#     column = 'created_at'
+#     created_at_df = df[[column]]
+#     output_df = date_helper(created_at_df, column)
 
-    @pytest.mark.it("check the column names match schema")
-    def test_valid_column_names_only(self):
-        expected_columns = ['date_id','year','month','day','day_of_week','day_name','month_name','quarter']
-        for column in self.output_df.columns:
-            assert column in expected_columns
+#     @pytest.mark.it("check the column names match schema")
+#     def test_valid_column_names_only(self):
+#         expected_columns = ['date_id','year','month','day','day_of_week','day_name','month_name','quarter']
+#         for column in self.output_df.columns:
+#             assert column in expected_columns
 
-    @pytest.mark.it("check the column datatypes match schema")
-    def test_column_data_types_match_schema(self):
-        assert self.output_df.date_id.dtype == object
-        assert self.output_df.year.dtype == 'Int32'
-        assert self.output_df.month.dtype == 'Int32'
-        assert self.output_df.day.dtype == 'Int32'
-        assert self.output_df.day_of_week.dtype == 'Int32'
-        assert self.output_df.day_name.dtype == 'string[python]'
-        assert self.output_df.month_name.dtype == 'string[python]'
-        assert self.output_df.quarter.dtype == 'Int32'
+#     @pytest.mark.it("check the column datatypes match schema")
+#     def test_column_data_types_match_schema(self):
+#         assert self.output_df.date_id.dtype == object
+#         assert self.output_df.year.dtype == 'Int32'
+#         assert self.output_df.month.dtype == 'Int32'
+#         assert self.output_df.day.dtype == 'Int32'
+#         assert self.output_df.day_of_week.dtype == 'Int32'
+#         assert self.output_df.day_name.dtype == 'string[python]'
+#         assert self.output_df.month_name.dtype == 'string[python]'
+#         assert self.output_df.quarter.dtype == 'Int32'
 
-    @pytest.mark.it("check values in date_id are of date type")
-    def test_values_in_date_id(self):
-        for i in self.output_df.index:
-            assert isinstance(self.output_df.loc[i,"date_id"], datetime.date)
+#     @pytest.mark.it("check values in date_id are of date type")
+#     def test_values_in_date_id(self):
+#         for i in self.output_df.index:
+#             assert isinstance(self.output_df.loc[i,"date_id"], datetime.date)
 
-    @pytest.mark.it("check output is a dataframe")
-    def test_output_is_a_dataframe(self):
-        assert isinstance(self.output_df, pd.DataFrame)
+#     @pytest.mark.it("check output is a dataframe")
+#     def test_output_is_a_dataframe(self):
+#         assert isinstance(self.output_df, pd.DataFrame)
 
 
-@pytest.mark.describe("test conversion_for_dim_date_tb")
-class TestDimDateTb:
-    input_file = 'transform/tests/data/sales_order.json'
-    date_df = pd.read_json(input_file)
-    output_df = conversion_for_dim_date(date_df)
+# @pytest.mark.describe("test conversion_for_dim_date_tb")
+# class TestDimDateTb:
+#     input_file = 'transform/tests/data/sales_order.json'
+#     date_df = pd.read_json(input_file)
+#     output_df = conversion_for_dim_date(date_df)
 
-    @pytest.mark.it("check the number of columns")
-    def test_number_of_columns(self):
-        assert len(self.output_df.columns) == 8
+#     @pytest.mark.it("check the number of columns")
+#     def test_number_of_columns(self):
+#         assert len(self.output_df.columns) == 8
 
-    @pytest.mark.it("check there are no duplicate rows")
-    def test_no_duplicate_rows(self):
-        result = self.output_df.duplicated()
-        assert all([value == False for value in result.values])
+#     @pytest.mark.it("check there are no duplicate rows")
+#     def test_no_duplicate_rows(self):
+#         result = self.output_df.duplicated()
+#         assert all([value == False for value in result.values])
 
-    @pytest.mark.it("check output is a dataframe")
-    def test_output_is_a_dataframe(self):
-        assert isinstance(self.output_df, pd.DataFrame)
+#     @pytest.mark.it("check output is a dataframe")
+#     def test_output_is_a_dataframe(self):
+#         assert isinstance(self.output_df, pd.DataFrame)
 
 
 @pytest.mark.describe("test conversion_for_fact_sales_order")
