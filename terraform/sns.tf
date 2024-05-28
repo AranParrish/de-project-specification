@@ -1,28 +1,15 @@
 # Sets up SNS topics and subscriptions for notifications and alerts
 
-# Create IAM policy for SNS permissions
-resource "aws_iam_policy" "sns_policy" {
-  name        = "SNSPermissions"
-  description = "IAM policy for SNS permissions"
+resource "aws_cloudwatch_log_metric_filter" "extract_lambda_error_filter" {
+  name           = "ExtractErrorFilter"
+  pattern        = "\"[ERROR]\""
+  log_group_name = "/aws/lambda/${var.extract_lambda_name}"
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "sns:Publish",
-          "sns:Subscribe",
-          "sns:CreateTopic",
-          "sns:GetTopicAttributes",
-          "sns:SetTopicAttributes",
-          "sns:DeleteTopic",
-          "sns:ListSubscriptionsByTopic"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
+  metric_transformation {
+    name      = "ExtractErrorCount"
+    namespace = "ExtractErrors"
+    value     = "1"
+  }
 }
 
 # Create SNS topic
@@ -42,8 +29,8 @@ resource "aws_cloudwatch_metric_alarm" "extract_lambda_error_alarm" {
   alarm_name          = "ExtractLambdaErrorAlarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = "1"
-  metric_name         = "Errors"
-  namespace           = "AWS/extract_lambda"
+  metric_name         = "ExtractErrorCount"
+  namespace           = "ExtractErrors"
   period              = "60"
   statistic           = "Sum"
   threshold           = "1"
@@ -54,7 +41,17 @@ resource "aws_cloudwatch_metric_alarm" "extract_lambda_error_alarm" {
 
 # For processed data
 
-# Same IAM policy for SNS permissions
+resource "aws_cloudwatch_log_metric_filter" "transform_lambda_error_filter" {
+  name           = "TransformErrorFilter"
+  pattern        = "\"[ERROR]\""
+  log_group_name = "/aws/lambda/${var.processed_lambda_name}"
+
+  metric_transformation {
+    name      = "TransformErrorCount"
+    namespace = "TransformErrors"
+    value     = "1"
+  }
+}
 
 # Create SNS topic
 resource "aws_sns_topic" "processed_lambda_notifications" {
@@ -69,12 +66,12 @@ resource "aws_sns_topic_subscription" "processed_email_subscription" {
 }
 
 # Create CloudWatch alarm for processed_lambda errors
-resource "aws_cloudwatch_metric_alarm" "processed_lambda_error_alarm" {
+resource "aws_cloudwatch_metric_alarm" "transform_lambda_error_alarm" {
   alarm_name          = "ProcessedLambdaErrorAlarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = "1"
-  metric_name         = "Errors"
-  namespace           = "AWS/processed_lambda"
+  metric_name         = "TransformErrorCount"
+  namespace           = "TransformErrors"
   period              = "60"
   statistic           = "Sum"
   threshold           = "1"
