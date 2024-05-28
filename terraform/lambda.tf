@@ -56,7 +56,7 @@ resource "aws_lambda_function" "processed_lambda" {
     layers = ["arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python312:8"]
     handler = "processed_lambda.lambda_handler" 
     runtime = "python3.12"
-    timeout = 300
+    timeout = 1200
 
 # Add dependencies for lambda s3 access, cloudwatch access, and eventbridge access
     depends_on = [
