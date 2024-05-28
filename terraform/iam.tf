@@ -99,9 +99,5 @@ resource "aws_iam_role_policy_attachment" "processed_lambda_cloudwatch_logs_poli
   policy_arn = aws_iam_policy.processed_cloudwatch_logs_policy.arn
 }
 
-# Attach SNS policy to processed_lambda role
-resource "aws_iam_role_policy_attachment" "processed_lambda_role_sns_policy" {
-  role       = aws_iam_role.processed_lambda_role.name
-  policy_arn = aws_iam_policy.sns_policy.arn
-}
+
 
