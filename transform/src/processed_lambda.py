@@ -9,6 +9,8 @@ logger.setLevel(logging.INFO)
 
 INGESTION_ZONE_BUCKET = os.environ["ingestion_zone_bucket"]
 PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
+department_df = ""
+address_df = ""
 
 
 def conversion_for_dim_location(df):
@@ -107,8 +109,9 @@ def conversion_for_dim_date(sales_order_df):
     It calls the function above and combines all rows while removing duplicates
     The output matches the requirements of the dim_date table
     """
-    df = sales_order_df
+    df = sales_order_df.copy()
     created_at_df = df[["created_at"]]
+    created_at_df.created_at = created_at_df.created_at.astype("datetime64[ns]")
     created_date_df = date_helper(created_at_df, "created_at")
 
     last_updated_date_df = df[["last_updated"]]
@@ -146,7 +149,7 @@ def conversion_for_fact_sales_order(sales_order_df):
     """
     This function takes in a sales_order dataframe and restructures it to match the fact_sales_order table
     """    
-    df = sales_order_df
+    df = sales_order_df.copy()
     df["sales_record_id"] = [i for i in range(len(df))]
     df.created_at = df.created_at.astype("datetime64[ns]")
     df.last_updated = df.last_updated.astype("datetime64[ns]")
@@ -166,11 +169,11 @@ def conversion_for_fact_sales_order(sales_order_df):
     return df
 
 
-def process_file(client, key_name, department_df, address_df):
+def process_file(client, key_name):
     pattern = re.compile(r"(['/'])(\w+)")
     match = pattern.search(key_name)
     table_name = match.group(2)
-
+    global department_df, address_df
     # Retrieve JSON data from S3
     resp = client.get_object(Bucket = INGESTION_ZONE_BUCKET, Key= key_name)
     file_content = resp['Body'].read().decode('utf-8')
@@ -178,14 +181,20 @@ def process_file(client, key_name, department_df, address_df):
         
     if "sales_order" in key_name:
         # Convert JSON data to DataFrame
-        df = pd.DataFrame(data)
+        sales_df = pd.DataFrame(data)
         new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
-        df = conversion_for_fact_sales_order(df)
+        df = conversion_for_fact_sales_order(sales_df)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+
+        df = conversion_for_dim_date(sales_df)
+        new_file_name = re.sub(table_name, f'dim_date', key_name)
+        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+
             
     elif "address" in key_name:
-        address_df = pd.DataFrame(data)
-        df = conversion_for_dim_location(address_df)
+        df = pd.DataFrame(data)
+        address_df = df.copy()
+        df = conversion_for_dim_location(df)
         new_file_name = re.sub(table_name, 'dim_location', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
                         
@@ -216,12 +225,6 @@ def process_file(client, key_name, department_df, address_df):
         currency_df = pd.DataFrame(data)
         df = conversion_for_dim_currency(currency_df)
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
-        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')   
-
-    elif "date" in key_name:
-        sales_df = pd.DataFrame(data)
-        df = conversion_for_dim_date(sales_df)
-        new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
 
     else:
@@ -239,7 +242,7 @@ def lambda_handler(event, context):
             ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
 
             for bucket_key in ingestion_files['Contents']:
-                process_file(client, bucket_key["Key"], department_df, address_df)
+                process_file(client, bucket_key["Key"])
         
         # Process only the new files added (triggered by the event)
         else:
@@ -248,7 +251,7 @@ def lambda_handler(event, context):
                 if s3_object_key[-4:] != 'json':
                     logger.error(f"File is not a valid json file")
                 else:
-                    process_file(client, s3_object_key, department_df, address_df)
+                    process_file(client, s3_object_key)
 
     except KeyError as k:
         logger.error(f"Error retrieving data, {k}")

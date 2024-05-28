@@ -332,7 +332,7 @@ class TestProcessFile:
     @pytest.mark.it('check correct function called for sales_order key')
     def test_correct_function_call_for_sales_order(self, s3, test_ingestion_bucket, test_processed_bucket):
         with patch("transform.src.processed_lambda.conversion_for_fact_sales_order") as mock_func:
-            process_file(s3, "2024-05-21/sales_order-15_36_42.731009.json", "", "")
+            process_file(s3, "2024-05-21/sales_order-15_36_42.731009.json")
         assert mock_func.called
 
     @pytest.mark.it('check correct function called for address key')
@@ -343,7 +343,7 @@ class TestProcessFile:
                 Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/address-15_36_42.731009.json"
             )
             with patch("transform.src.processed_lambda.conversion_for_dim_location") as mock_func:
-                process_file(s3, "2024-05-21/address-15_36_42.731009.json", "", "")
+                process_file(s3, "2024-05-21/address-15_36_42.731009.json")
         assert mock_func.called
 
     @pytest.mark.it('check correct function called for counterparty key')
@@ -357,21 +357,25 @@ class TestProcessFile:
                 Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/counterparty-15_36_42.731009.json"
             )
         with patch("transform.src.processed_lambda.conversion_for_dim_counterparty") as mock_func:
-            process_file(s3, "2024-05-21/counterparty-15_36_42.731009.json", "", address_df)
+            process_file(s3, "2024-05-21/counterparty-15_36_42.731009.json")
         assert mock_func.called
 
     @pytest.mark.it('check correct function called for staff key')
     def test_correct_function_call_for_department(self, s3, test_ingestion_bucket, test_processed_bucket):
-        input_dep_file = "transform/tests/data/department.json"
-        department_df = pd.read_json(input_dep_file)
-        with open("transform/tests/data/staff.json") as f:
-            text_to_write = f.read()
-            s3.put_object(
-                Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/staff-15_36_42.731009.json"
-            )
-        with patch("transform.src.processed_lambda.conversion_for_dim_staff") as mock_func:
-            process_file(s3, "2024-05-21/staff-15_36_42.731009.json", department_df, "")
-        assert mock_func.called
+            with open("transform/tests/data/department.json") as f:
+                text_to_write = f.read()
+                s3.put_object(
+                    Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/department-15_36_42.731009.json"
+                )
+                lambda_handler({}, None)
+            with open("transform/tests/data/staff.json") as f:
+                text_to_write = f.read()
+                s3.put_object(
+                    Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/staff-15_36_42.731009.json"
+                )
+            with patch("transform.src.processed_lambda.conversion_for_dim_staff") as mock_func:
+                process_file(s3, "2024-05-21/staff-15_36_42.731009.json")
+            assert mock_func.called
 
     @pytest.mark.it('check correct function called for design key')
     def test_correct_function_call_for_design(self, s3, test_ingestion_bucket, test_processed_bucket):
@@ -381,7 +385,7 @@ class TestProcessFile:
                 Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/design-15_36_42.731009.json"
             )
         with patch("transform.src.processed_lambda.conversion_for_dim_design") as mock_func:
-            process_file(s3, "2024-05-21/design-15_36_42.731009.json", "", "")
+            process_file(s3, "2024-05-21/design-15_36_42.731009.json")
         assert mock_func.called        
 
     @pytest.mark.it('check correct function called for currency key')
@@ -392,7 +396,7 @@ class TestProcessFile:
                 Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/currency-15_36_42.731009.json"
             )
         with patch("transform.src.processed_lambda.conversion_for_dim_currency") as mock_func:
-            process_file(s3, "2024-05-21/currency-15_36_42.731009.json", "", "")
+            process_file(s3, "2024-05-21/currency-15_36_42.731009.json")
         assert mock_func.called
 
 
@@ -405,7 +409,7 @@ class TestTransfomLambdaHandler:
     @pytest.mark.it('Initialisation test')
     def test_transform_lambda_initialisation(self, s3, test_ingestion_bucket, test_processed_bucket):
         lambda_handler({}, None)
-        assert s3.list_objects_v2(Bucket="test_ingestion_bucket")['KeyCount'] == s3.list_objects_v2(Bucket="test_processed_bucket")['KeyCount']
+        assert s3.list_objects_v2(Bucket="test_ingestion_bucket")['KeyCount'] + 1 == s3.list_objects_v2(Bucket="test_processed_bucket")['KeyCount']
 
     @mock_aws(config={"s3": {"use_docker": False}})
     @pytest.mark.it('Check Object Key Content')
@@ -481,7 +485,7 @@ class TestTransfomLambdaHandler:
     #         with caplog.at_level(logging.ERROR):
     #             lambda_handler(event="event", context="context")
     #             print("this is what has been logged:", caplog.text)
-    #         assert caplog.text != ''
+    #         assert caplog.text == ''
 
     @pytest.mark.it('Test RuntimeError raised for other errors')
     def test_runtime_error_raised(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
@@ -503,8 +507,9 @@ class TestLambdaEventTrigger:
             )
         lambda_handler(valid_event, {})
         response = s3.list_objects_v2(Bucket="test_processed_bucket")
-        assert response["KeyCount"] == 2
-        assert response['Contents'][0]['Key'] == '2024-05-21/fact_sales_order-15_36_42.731009.parquet'
+        assert response["KeyCount"] == 3
+        print("this is response[con]", response['Contents'])
+        assert response['Contents'][0]['Key'] == '2024-05-21/dim_date-15_36_42.731009.parquet'
 
     @pytest.mark.it("lambda throws logs message if is not valid json type")
     def test_invalid_type(self, file_type_event, caplog, s3, test_processed_bucket, test_ingestion_bucket):
