@@ -106,6 +106,7 @@ resource "aws_iam_role" "load_lambda_role" {
     
     name_prefix = "role-${var.load_lambda_name}"
     assume_role_policy = <<EOF
+    {
         "Version": "2012-10-17",
         "Statement": [
             {
