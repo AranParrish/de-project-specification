@@ -76,6 +76,10 @@ extract-run-black:
 transform-run-black:
 	$(call execute_in_env, black  ./transform/src/*.py ./transform/tests/*.py)
 
+## Run the black code check
+load-run-black:
+	$(call execute_in_env, black  ./load/src/*.py ./load/tests/*.py)
+
 ## Run the unit tests
 extract-unit-test:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -vvv --testdox ./extract/tests/)
@@ -84,6 +88,10 @@ extract-unit-test:
 transform-unit-test:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -vvv --testdox ./transform/tests/)
 
+## Run the unit tests
+load-unit-test:
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -vvv --testdox ./load/tests/)
+
 ## Run the coverage check
 extract-check-coverage:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=./extract/src ./extract/tests/)
@@ -91,12 +99,19 @@ extract-check-coverage:
 ## Run the coverage check
 transform-check-coverage:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=./transform/src ./transform/tests/)
+	
+## Run the coverage check
+load-check-coverage:
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=./load/src ./load/tests/)
 
-## Run all checks
+## Run extract checks
 extract-run-checks: security-test extract-run-black extract-unit-test extract-check-coverage
 
-## Run all checks
-transform-run-checks: transform-run-black transform-unit-test transform-check-coverage
+## Run transform checks
+transform-run-checks: security-test transform-run-black transform-unit-test transform-check-coverage
+
+## Run load checks
+load-run-checks: security-test load-run-black load-unit-test load-check-coverage
 
 ## Run all dependencies
-run-all: requirements dev-setup extract-run-checks transform-run-checks
+run-all: requirements dev-setup extract-run-checks transform-run-checks load-run-checks
