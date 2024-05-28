@@ -64,7 +64,7 @@ dev-setup: bandit safety black coverage
 # Build / Run
 
 ## Run the security test (bandit + safety)
-extract-security-test:
+security-test:
 	$(call execute_in_env, safety check -r ./requirements.txt)
 	$(call execute_in_env, bandit -lll */*/*.py *c/*/*/*.py)
 
@@ -72,16 +72,31 @@ extract-security-test:
 extract-run-black:
 	$(call execute_in_env, black  ./extract/src/*.py ./extract/tests/*.py)
 
+## Run the black code check
+transform-run-black:
+	$(call execute_in_env, black  ./transform/src/*.py ./transform/tests/*.py)
+
 ## Run the unit tests
 extract-unit-test:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -vvv --testdox ./extract/tests/)
+
+## Run the unit tests
+transform-unit-test:
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -vvv --testdox ./transform/tests/)
 
 ## Run the coverage check
 extract-check-coverage:
 	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=./extract/src ./extract/tests/)
 
+## Run the coverage check
+transform-check-coverage:
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest --cov=./transform/src ./transform/tests/)
+
 ## Run all checks
-extract-run-checks: extract-security-test extract-run-black extract-unit-test extract-check-coverage
+extract-run-checks: security-test extract-run-black extract-unit-test extract-check-coverage
+
+## Run all checks
+transform-run-checks: transform-run-black transform-unit-test transform-check-coverage
 
 ## Run all dependencies
-run-all: requirements dev-setup extract-run-checks
+run-all: requirements dev-setup extract-run-checks transform-run-checks
