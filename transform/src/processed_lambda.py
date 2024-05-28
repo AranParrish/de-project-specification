@@ -30,7 +30,6 @@ def conversion_for_dim_currency(df):
     """
     df = df.drop(["created_at", "last_updated"], axis=1)
     for i in range(len(df)):
-        print(df.loc[i, "currency_code"])
         if df.loc[i, "currency_code"] == "GBP":
             df.loc[i, "currency_name"] = "Pound Sterling"
         elif df.loc[i, "currency_code"] == "USD":
@@ -88,14 +87,17 @@ def date_helper(date_df, column):
     """
     This function takes in a date dataframe and creates the columns needed for the dim_date table
     """
-    date_df['date_id'] = date_df[column].dt.date
-    date_df['year'] = date_df[column].dt.year
-    date_df['month'] = date_df[column].dt.month
-    date_df['day'] = date_df[column].dt.day
-    date_df['day_of_week'] = date_df[column].dt.dayofweek
-    date_df['day_name'] = date_df[column].dt.day_name()
-    date_df['month_name'] = date_df[column].dt.month_name()
-    date_df['quarter'] = date_df[column].dt.quarter
+    date_id = pd.date_range('2022-11-01', '2024-12-31', freq='D')
+    print(type(date_id.to_frame()))
+    with pd.option_context('mode.chained_assignment', None):
+        date_df['date_id'] = date_df[column].dt.date
+        date_df['year'] = date_df[column].dt.year
+        date_df['month'] = date_df[column].dt.month
+        date_df['day'] = date_df[column].dt.day
+        date_df['day_of_week'] = date_df[column].dt.dayofweek
+        date_df['day_name'] = date_df[column].dt.day_name()
+        date_df['month_name'] = date_df[column].dt.month_name()
+        date_df['quarter'] = date_df[column].dt.quarter
 
     date_df = date_df.drop(column, axis = 1)
     date_df = date_df.convert_dtypes()
@@ -164,7 +166,7 @@ def conversion_for_fact_sales_order(sales_order_df):
 
     df.drop(["created_at", "last_updated"], axis=1, inplace=True)
     df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
-
+ 
     return df
 
 
