@@ -150,7 +150,6 @@ def conversion_for_fact_sales_order(sales_order_df):
     This function takes in a sales_order dataframe and restructures it to match the fact_sales_order table
     """    
     df = sales_order_df.copy()
-    df["sales_record_id"] = [i for i in range(len(df))]
     df.created_at = df.created_at.astype("datetime64[ns]")
     df.last_updated = df.last_updated.astype("datetime64[ns]")
     df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
@@ -181,18 +180,18 @@ def process_file(client, key_name):
         
     if "sales_order" in key_name:
         # Convert JSON data to DataFrame
-        sales_df = pd.DataFrame(data)
+        sales_df = pd.DataFrame(data, index=["sales_order_id"])
         new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
         df = conversion_for_fact_sales_order(sales_df)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
 
-        df = conversion_for_dim_date(sales_df)
+        df = conversion_for_dim_date(sales_df, index=["sales_order_id"])
         new_file_name = re.sub(table_name, f'dim_date', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
 
             
     elif "address" in key_name:
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data, index=["address_id"])
         address_df = df.copy()
         df = conversion_for_dim_location(df)
         new_file_name = re.sub(table_name, 'dim_location', key_name)
@@ -200,29 +199,29 @@ def process_file(client, key_name):
                         
     elif "counterparty" in key_name:
         if type(address_df) != str:
-            counterparty_df = pd.DataFrame(data)
+            counterparty_df = pd.DataFrame(data, index=["counterparty_id"])
             df = conversion_for_dim_counterparty(address_df, counterparty_df)
             new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
     
     elif "department" in key_name:
-        department_df = pd.DataFrame(data)
+        department_df = pd.DataFrame(data, index=["department_id"])
 
     elif "staff" in key_name:
         if type(department_df) != str:
-            staff_df = pd.DataFrame(data)
+            staff_df = pd.DataFrame(data, index=["staff_id"])
             df = conversion_for_dim_staff(department_df, staff_df)
             new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
 
     elif "design" in key_name:
-        design_df = pd.DataFrame(data)
+        design_df = pd.DataFrame(data, index=["design_id"])
         df = conversion_for_dim_design(design_df)
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
     
     elif "currency" in key_name:
-        currency_df = pd.DataFrame(data)
+        currency_df = pd.DataFrame(data, index= ["currency_id"])
         df = conversion_for_dim_currency(currency_df)
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             

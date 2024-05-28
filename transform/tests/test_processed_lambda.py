@@ -281,18 +281,17 @@ class TestFactSalesOrder:
 
     @pytest.mark.it("check the number of columns")
     def test_number_of_columns(self):
-        assert len(self.output_df.columns) == 15
+        assert len(self.output_df.columns) == 14
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
-        expected_columns = ["sales_record_id", "sales_order_id","created_date","created_time","last_updated_date","last_updated_time","sales_staff_id","counterparty_id","units_sold","unit_price","currency_id","design_id","agreed_payment_date","agreed_delivery_date","agreed_delivery_location_id"]
+        expected_columns = [ "sales_order_id","created_date","created_time","last_updated_date","last_updated_time","sales_staff_id","counterparty_id","units_sold","unit_price","currency_id","design_id","agreed_payment_date","agreed_delivery_date","agreed_delivery_location_id"]
         for column in self.output_df.columns:
             assert column in expected_columns
 
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
-        assert self.output_df.sales_record_id.dtype == 'int64'
         assert self.output_df.sales_order_id.dtype == 'int64'
         assert self.output_df.design_id.dtype == 'int64'
         assert self.output_df.sales_staff_id.dtype == 'int64'
@@ -417,7 +416,7 @@ class TestTransfomLambdaHandler:
         lambda_handler({}, None)
         df = wr.s3.read_parquet(path=f"s3://test_processed_bucket/2024-05-21/fact_sales_order-15_36_42.731009.parquet")
 
-        expected = ['sales_record_id', 'sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
+        expected = ['sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
        'units_sold', 'unit_price', 'currency_id', 'agreed_delivery_date',
        'agreed_payment_date', 'agreed_delivery_location_id', 'created_date',
        'created_time', 'last_updated_date', 'last_updated_time']
