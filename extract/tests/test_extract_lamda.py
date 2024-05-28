@@ -46,6 +46,7 @@ def bucket(s3):
         Bucket="test_bucket",
         CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
     )
+    yield "test_bucket"
 
 
 @pytest.mark.describe("Get DB credentials function tests")
@@ -173,17 +174,15 @@ class TestWriteData:
         test_input = [1, 2, 3]
         copy_test_input = [1, 2, 3]
         test_table = "test"
-        test_bucket = "test_bucket"
-        write_data(s3, test_bucket, test_input, test_table)
+        write_data(s3, bucket, test_input, test_table) 
         assert test_input == copy_test_input
 
     @pytest.mark.it("Able to put file in S3 bucket")
     def test_write_to_s3(self, s3, bucket):
         data = [{"a": 1}, {"b": 2}]
         test_table = "test"
-        test_bucket = "test_bucket"
-        write_data(s3, test_bucket, data, test_table)
-        listing = s3.list_objects_v2(Bucket="test_bucket")
+        write_data(s3, bucket, data, test_table)
+        listing = s3.list_objects_v2(Bucket=bucket)
         assert len(listing["Contents"]) == 1
         assert "test" in listing["Contents"][0]["Key"]
 
@@ -191,7 +190,7 @@ class TestWriteData:
     def test_write_s3_logs_client_error(self, s3, caplog):
         data = [{"a": 1}, {"b": 2}]
         test_table = "test"
-        test_bucket = "test_bucket2"
+        test_bucket = "test_bucket"
         with caplog.at_level(logging.INFO):
             write_data(s3, test_bucket, data, test_table)
         assert "ClientError" in caplog.text
@@ -199,7 +198,7 @@ class TestWriteData:
 
 @pytest.mark.describe("Test lambda handler function")
 class TestLambdaHandler:
-    @pytest.mark.it("Test for empty bucket")
+    @pytest.mark.it("Test for empty ingestion bucket, history read for all tables")
     def test_lambda_handler_empty_bucket(self, s3, bucket):
         lambda_handler(event="event", context="context")
         test_bucket = "test_bucket"
@@ -208,7 +207,6 @@ class TestLambdaHandler:
 
     @pytest.mark.it("Check for updated files")
     def test_lambda_handler_updated_files(self, s3, caplog, bucket):
-        test_bucket = "test_bucket"
         lambda_handler(event="event", context="context")
         with caplog.at_level(logging.INFO):
             lambda_handler(event="event", context="context")
@@ -224,7 +222,7 @@ class TestLambdaHandler:
                         "Message": "The security token included in the request is invalid.",
                     }
                 },
-                "ClientError",
+                "ClientError"
             )
             with caplog.at_level(logging.ERROR):
                 lambda_handler(event="event", context="context")

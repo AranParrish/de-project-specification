@@ -16,6 +16,7 @@ with patch.dict(os.environ, {"ingestion_zone_bucket": "test_ingestion_bucket", "
         date_helper,
         conversion_for_dim_date,
         conversion_for_fact_sales_order,
+        process_file,
         lambda_handler        
     )
 
@@ -92,7 +93,7 @@ class TestDimLocation:
     location_df = pd.read_json(input_file)
     output_df = conversion_for_dim_location(location_df)
 
-    @pytest.mark.it("check the number of columns without primary key column")
+    @pytest.mark.it("check the number of columns")
     def test_number_of_columns(self):
         assert len(self.output_df.columns) == 8
 
@@ -117,6 +118,10 @@ class TestDimCurrency:
     currency_df = pd.read_json(input_file)
     output_df = conversion_for_dim_currency(currency_df)
 
+    @pytest.mark.it("check the number of columns")
+    def test_number_of_columns(self):
+        assert len(self.output_df.columns) == 3
+
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
         expected_columns = ['currency_id', 'currency_code','currency_name']
@@ -137,6 +142,10 @@ class TestDimDesign:
     input_file = 'transform/tests/data/design.json'
     design_df = pd.read_json(input_file)
     output_df = conversion_for_dim_design(design_df)
+
+    @pytest.mark.it("check the number of columns")
+    def test_number_of_columns(self):
+        assert len(self.output_df.columns) == 4
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
@@ -162,6 +171,10 @@ class TestDimCounterparty:
     counterparty_df = pd.read_json(input_cp_file)
     output_df = conversion_for_dim_counterparty(address_df,counterparty_df)
 
+    @pytest.mark.it("check the number of columns")
+    def test_number_of_columns(self):
+        assert len(self.output_df.columns) == 9
+
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
         expected_columns = ['counterparty_id', 'counterparty_legal_name', 'counterparty_legal_address_line_1','counterparty_legal_address_line_2','counterparty_legal_district','counterparty_legal_city','counterparty_legal_postal_code','counterparty_legal_country','counterparty_legal_phone_number']
@@ -184,6 +197,10 @@ class TestDimStaff:
     department_df = pd.read_json(input_dep_file)
     staff_df = pd.read_json(input_staff_file)
     output_df = conversion_for_dim_staff(department_df,staff_df)
+
+    @pytest.mark.it("check the number of columns")
+    def test_number_of_columns(self):
+        assert len(self.output_df.columns) == 6
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
@@ -242,6 +259,10 @@ class TestDimDateTb:
     date_df = pd.read_json(input_file)
     output_df = conversion_for_dim_date(date_df)
 
+    @pytest.mark.it("check the number of columns")
+    def test_number_of_columns(self):
+        assert len(self.output_df.columns) == 8
+
     @pytest.mark.it("check there are no duplicate rows")
     def test_no_duplicate_rows(self):
         result = self.output_df.duplicated()
@@ -257,6 +278,10 @@ class TestFactSalesOrder:
     input_file = 'transform/tests/data/sales_order.json'
     sales_df = pd.read_json(input_file)
     output_df = conversion_for_fact_sales_order(sales_df)
+
+    @pytest.mark.it("check the number of columns")
+    def test_number_of_columns(self):
+        assert len(self.output_df.columns) == 15
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
@@ -301,27 +326,91 @@ class TestFactSalesOrder:
     def test_output_is_a_dataframe(self):
         assert isinstance(self.output_df, pd.DataFrame)
 
-# Add tests from util functions
+@pytest.mark.describe('test process_file')
+class TestProcessFile:
+
+    @pytest.mark.it('check correct function called for sales_order key')
+    def test_correct_function_call_for_sales_order(self, s3, test_ingestion_bucket, test_processed_bucket):
+        with patch("transform.src.processed_lambda.conversion_for_fact_sales_order") as mock_func:
+            process_file(s3, "2024-05-21/sales_order-15_36_42.731009.json", "", "")
+        assert mock_func.called
+
+    @pytest.mark.it('check correct function called for address key')
+    def test_correct_function_call_for_address(self, s3, test_ingestion_bucket, test_processed_bucket):
+        with open("transform/tests/data/address.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/address-15_36_42.731009.json"
+            )
+            with patch("transform.src.processed_lambda.conversion_for_dim_location") as mock_func:
+                process_file(s3, "2024-05-21/address-15_36_42.731009.json", "", "")
+        assert mock_func.called
+
+    @pytest.mark.it('check correct function called for counterparty key')
+    def test_correct_function_call_for_counterparty(self, s3, test_ingestion_bucket, test_processed_bucket):
+        input_ad_file = "transform/tests/data/address.json"
+        df = pd.read_json(input_ad_file)
+        address_df = conversion_for_dim_location(df)
+        with open("transform/tests/data/counterparty.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/counterparty-15_36_42.731009.json"
+            )
+        with patch("transform.src.processed_lambda.conversion_for_dim_counterparty") as mock_func:
+            process_file(s3, "2024-05-21/counterparty-15_36_42.731009.json", "", address_df)
+        assert mock_func.called
+
+    @pytest.mark.it('check correct function called for staff key')
+    def test_correct_function_call_for_department(self, s3, test_ingestion_bucket, test_processed_bucket):
+        input_dep_file = "transform/tests/data/department.json"
+        department_df = pd.read_json(input_dep_file)
+        with open("transform/tests/data/staff.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/staff-15_36_42.731009.json"
+            )
+        with patch("transform.src.processed_lambda.conversion_for_dim_staff") as mock_func:
+            process_file(s3, "2024-05-21/staff-15_36_42.731009.json", department_df, "")
+        assert mock_func.called
+
+    @pytest.mark.it('check correct function called for design key')
+    def test_correct_function_call_for_design(self, s3, test_ingestion_bucket, test_processed_bucket):
+        with open("transform/tests/data/design.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/design-15_36_42.731009.json"
+            )
+        with patch("transform.src.processed_lambda.conversion_for_dim_design") as mock_func:
+            process_file(s3, "2024-05-21/design-15_36_42.731009.json", "", "")
+        assert mock_func.called        
+
+    @pytest.mark.it('check correct function called for currency key')
+    def test_correct_function_call_for_currency(self, s3, test_ingestion_bucket, test_processed_bucket):
+        with open("transform/tests/data/currency.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/currency-15_36_42.731009.json"
+            )
+        with patch("transform.src.processed_lambda.conversion_for_dim_currency") as mock_func:
+            process_file(s3, "2024-05-21/currency-15_36_42.731009.json", "", "")
+        assert mock_func.called
+
 
 # Add tests for writing to the processed data bucket
 
-# checks the number of files in test_ingestion_bucket are the same in the test_processed_bucket
 @pytest.mark.describe('Transform lambda handler tests')
 class TestTransfomLambdaHandler:
 
-    # @mock_aws(config={"s3": {"use_docker": False}})
+    @mock_aws(config={"s3": {"use_docker": False}})
     @pytest.mark.it('Initialisation test')
     def test_transform_lambda_initialisation(self, s3, test_ingestion_bucket, test_processed_bucket):
         lambda_handler({}, None)
         assert s3.list_objects_v2(Bucket="test_ingestion_bucket")['KeyCount'] == s3.list_objects_v2(Bucket="test_processed_bucket")['KeyCount']
-        
-# checks the parquet files has the required columns as specified in the schema
 
-    # @mock_aws(config={"s3": {"use_docker": False}})
+    @mock_aws(config={"s3": {"use_docker": False}})
     @pytest.mark.it('Check Object Key Content')
     def test_transform_lambda_content(self, test_ingestion_bucket, test_processed_bucket, s3):
         lambda_handler({}, None)
-
         df = wr.s3.read_parquet(path=f"s3://test_processed_bucket/2024-05-21/fact_sales_order-15_36_42.731009.parquet")
 
         expected = ['sales_record_id', 'sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
@@ -348,29 +437,58 @@ class TestTransfomLambdaHandler:
                 
     @pytest.mark.it('Test S3 NoSuchBucket response')
     def test_s3_no_such_bucket_response(self, caplog, s3):
-        # with patch.dict(os.environ,{"ingestion_zone_bucket": "fake_ingestion_bucket"}):
-        with caplog.at_level(logging.ERROR):
+        with patch.dict(os.environ,{"ingestion_zone_bucket": "fake_ingestion_bucket"}):
+            with caplog.at_level(logging.ERROR):
+                    lambda_handler(event="event", context="context")
+                    assert "No such bucket" in caplog.text
+                        
+    
+    @pytest.mark.it('Test S3 NoSuchKey response')
+    def test_s3_no_such_key_response(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+        with patch("transform.src.processed_lambda.process_file") as mock_process_file_func:
+            mock_process_file_func.side_effect = ClientError(
+                {
+                    "Error":{
+                        "Code": "NoSuchKey",
+                        "Message": "This key does not exist."
+                    }
+                }, 
+                "ClientError - NoSuchKey"
+            )
+            with caplog.at_level(logging.ERROR):
                 lambda_handler(event="event", context="context")
-                assert "No such bucket" in caplog.text
-                    
-    # @pytest.mark.it('Test S3 NoSuchKey response')
+            assert "This key does not exist" in caplog.text
+    
+    @pytest.mark.it('Test decoding error response')
+    def test_decoding_error_response(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+        with patch("transform.src.processed_lambda.process_file") as mock_process_file_func:
+            mock_process_file_func.side_effect = UnicodeDecodeError("utf-8", b"\xff", 0, 1, "Unrecognised character")
+            with caplog.at_level(logging.ERROR):
+                lambda_handler(event="event", context="context")
+            assert "Unable to decode the file" in caplog.text
 
-    # def test_s3_no_such_key_response(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+    @pytest.mark.it('Test KeyError response')
+    def test_keyerror_repsonse(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+        lambda_handler({}, "context")
+        with caplog.at_level(logging.ERROR):
+            lambda_handler(event={}, context='context')
+        assert "Error retrieving data" in caplog.text
 
-    #     with patch("transform.src.processed_lambda.boto3.client") as mock_client:
-    #         mock_client.return_value.get_object.side_effect = ClientError(
-    #             {
-    #                 "Error": {
-    #                     "Code": 'NoSuchKey',
-    #                     "Message": "No such key exists."
-    #                 }
-    #             }, 
-    #             "ClientError"
-    #         )
+    # @pytest.mark.it('Test other error is logged')
+    # def test_other_errors_logged(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+    #     with patch("transform.src.processed_lambda.process_file") as mock_process_file_func:
+    #         mock_process_file_func.side_effect = NameError
     #         with caplog.at_level(logging.ERROR):
     #             lambda_handler(event="event", context="context")
-    #             print("this is the log message", caplog.text)
-    #             assert "No such key " in caplog.text
+    #             print("this is what has been logged:", caplog.text)
+    #         assert caplog.text != ''
+
+    @pytest.mark.it('Test RuntimeError raised for other errors')
+    def test_runtime_error_raised(self, caplog, s3, test_ingestion_bucket, test_processed_bucket):
+        with patch("transform.src.processed_lambda.process_file") as mock_process_file_func:
+            mock_process_file_func.side_effect = NameError
+            with pytest.raises(RuntimeError):
+                lambda_handler(event="event", context="context")
 
 
 @pytest.mark.describe("Test lambda handler event trigger")

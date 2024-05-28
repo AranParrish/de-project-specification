@@ -13,7 +13,7 @@ PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
 
 def conversion_for_dim_location(df):
     """
-    This function takes in an address json file and restructures it to match the dim_location table
+    This function takes in an address dataframe and restructures it to match the dim_location table
     """
     df = df.drop(["created_at", "last_updated"], axis=1)
     df.rename(columns={"address_id": "location_id"}, inplace=True)
@@ -24,7 +24,7 @@ def conversion_for_dim_location(df):
 
 def conversion_for_dim_currency(df):
     """
-    This function takes in a currnecy json file and restructures it to match dim_currency table    
+    This function takes in a currency dataframe and restructures it to match dim_currency table    
     """
     df = df.drop(["created_at", "last_updated"], axis=1)
     for i in range(len(df)):
@@ -44,7 +44,7 @@ def conversion_for_dim_currency(df):
 
 def conversion_for_dim_design(df):
     """
-    This function takes in a design json file and restructures it to match dim_design table
+    This function takes in a design dataframe and restructures it to match dim_design table
     """
     df = df.drop(["created_at", "last_updated"], axis=1)
     df = df.convert_dtypes()
@@ -53,7 +53,7 @@ def conversion_for_dim_design(df):
 
 def conversion_for_dim_counterparty(ad_df, cp_df):
     """
-    This function takes in an address json file and counterparty json file and restructures it to match dim_counterparty table
+    This function takes in address and counterparty dataframes and restructures them to match dim_counterparty table
     """
     ad_df.drop(["created_at", "last_updated"], axis=1, inplace=True)
     ad_df = ad_df.add_prefix("counterparty_legal_")
@@ -72,7 +72,7 @@ def conversion_for_dim_counterparty(ad_df, cp_df):
 
 def conversion_for_dim_staff(dep_df, staff_df):
     """
-    This function takes in a department json file and staff json file and restructures it to match the dim_staff table
+    This function takes in department and staff dataframes and restructures them to match the dim_staff table
     """
     staff_df.drop(["created_at", "last_updated"], axis=1, inplace=True)
     dep_df = dep_df[["department_id", "department_name", "location"]]
@@ -84,7 +84,7 @@ def conversion_for_dim_staff(dep_df, staff_df):
 
 def date_helper(date_df, column):
     """
-    This function takes in dataframe (used for a date dataframe) and creates the columns needed for the dim_date table
+    This function takes in a date dataframe and creates the columns needed for the dim_date table
     """
     date_df['date_id'] = date_df[column].dt.date
     date_df['year'] = date_df[column].dt.year
@@ -103,7 +103,7 @@ def date_helper(date_df, column):
 
 def conversion_for_dim_date(sales_order_df):
     """
-    This function takes in a sales_order json file and creates dataframes from the date columns
+    This function takes in a sales_order dataframe and creates dataframes from the date columns
     It calls the function above and combines all rows while removing duplicates
     The output matches the requirements of the dim_date table
     """
@@ -144,7 +144,7 @@ def conversion_for_dim_date(sales_order_df):
 
 def conversion_for_fact_sales_order(sales_order_df):
     """
-    This function takes in a sales_order json file and restructures the data to match the fact_sales_order table
+    This function takes in a sales_order dataframe and restructures it to match the fact_sales_order table
     """    
     df = sales_order_df
     df["sales_record_id"] = [i for i in range(len(df))]
@@ -190,7 +190,7 @@ def process_file(client, key_name, department_df, address_df):
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
                         
     elif "counterparty" in key_name:
-        if address_df:
+        if type(address_df) != str:
             counterparty_df = pd.DataFrame(data)
             df = conversion_for_dim_counterparty(address_df, counterparty_df)
             new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
@@ -200,7 +200,7 @@ def process_file(client, key_name, department_df, address_df):
         department_df = pd.DataFrame(data)
 
     elif "staff" in key_name:
-        if department_df:
+        if type(department_df) != str:
             staff_df = pd.DataFrame(data)
             df = conversion_for_dim_staff(department_df, staff_df)
             new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
@@ -254,9 +254,9 @@ def lambda_handler(event, context):
         logger.error(f"Error retrieving data, {k}")
     except ClientError as c:
         if c.response["Error"]["Code"] == "NoSuchKey":
-            logger.error(f"No object found")
+            logger.error(f"No such key: {c}")
         elif c.response["Error"]["Code"] == "NoSuchBucket":
-            logger.error(f"No such bucket")
+            logger.error(f"No such bucket: {c}")
         else:
             logger.error(f"Error InvalidClientTokenId: {c}")
     except UnicodeDecodeError as e:
