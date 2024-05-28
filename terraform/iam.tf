@@ -38,12 +38,7 @@ resource "aws_iam_role_policy_attachment" "extract_lambda_cloudwatch_logs_policy
   policy_arn = aws_iam_policy.extract_cloudwatch_logs_policy.arn
 }
 
-# Attach SNS policy to extract_lambda role
-resource "aws_iam_role_policy_attachment" "extract_lambda_role_sns_policy" {
-  role       = aws_iam_role.extract_lambda_role.name
-  policy_arn = aws_iam_policy.sns_policy.arn
-}
-
+# Secrets manager policy
 resource "aws_iam_policy" "sm_policy" {
   name = "sm_access_permissions"
   policy = jsonencode({
@@ -103,11 +98,6 @@ resource "aws_iam_role_policy_attachment" "processed_lambda_cloudwatch_logs_poli
   policy_arn = aws_iam_policy.processed_cloudwatch_logs_policy.arn
 }
 
-# Attach SNS policy to processed_lambda role
-resource "aws_iam_role_policy_attachment" "processed_lambda_role_sns_policy" {
-  role       = aws_iam_role.processed_lambda_role.name
-  policy_arn = aws_iam_policy.sns_policy.arn
-}
 
 # Load lambda iam
 
@@ -116,7 +106,6 @@ resource "aws_iam_role" "load_lambda_role" {
     
     name_prefix = "role-${var.load_lambda_name}"
     assume_role_policy = <<EOF
-    {
         "Version": "2012-10-17",
         "Statement": [
             {
@@ -147,11 +136,6 @@ resource "aws_iam_role_policy_attachment" "load_lambda_cloudwatch_logs_policy" {
   policy_arn = aws_iam_policy.load_cloudwatch_logs_policy.arn
 }
 
-# Attach SNS policy to processed_lambda role
-resource "aws_iam_role_policy_attachment" "load_lambda_role_sns_policy" {
-  role       = aws_iam_role.load_lambda_role.name
-  policy_arn = aws_iam_policy.sns_policy.arn
-}
 
 # Attach Secrets Manager policy to warehouse lambda function role
 resource "aws_iam_role_policy_attachment" "load_lambda_sm_policy_attachment" {
