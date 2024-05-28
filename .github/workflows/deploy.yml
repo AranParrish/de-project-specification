@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  run-tests:
-    name: run-tests
+  run-all:
+    name: run-all
     environment: dev
     runs-on: ubuntu-latest
     steps:
@@ -22,18 +22,18 @@ jobs:
           python-version: '3.12'
       - name: Install Make
         run: sudo apt install make -y
-      - name: Run Tests
-        env: 
-          USERNAME: ${{ secrets.USERNAME}}
-          PASSWORD: ${{ secrets.PASSWORD }}
-          DATABASE: ${{ vars.DB_NAME }}
-          HOST: ${{ vars.DB_HOST }}
-          PORT: ${{ vars.DB_PORT }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{secrets.AWS_REGION}}
+      - name: run-all
         run: make run-all 
   
-  deploy-extract-lambda:
-    name: deploy-extract-lambda
-    #needs: run-tests
+  deploy:
+    name: deploy
+    #needs: run-all
     environment: dev
     runs-on: ubuntu-latest
     steps:
@@ -48,11 +48,9 @@ jobs:
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
       - name: Terraform Init
-        working-directory: extract/terraform
+        working-directory: terraform
         run: terraform init
-      - name: Terraform Plan
-        working-directory: extract/terraform
-        run: terraform plan
       - name: Terraform Apply
-        working-directory: extract/terraform
+        working-directory: terraform
         run: terraform apply -auto-approve
+
