@@ -9,7 +9,7 @@ resource "aws_lambda_function" "extract_lambda" {
     layers = [aws_lambda_layer_version.python_dotenv_layer.arn]
     handler = "extract_lambda.lambda_handler"
     runtime = "python3.12"
-    timeout = 300
+    timeout = 900
 
 # Add dependencies for lambda s3 access, cloudwatch access and secrets manager access
     depends_on = [
