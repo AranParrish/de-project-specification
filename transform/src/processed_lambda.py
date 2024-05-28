@@ -246,12 +246,13 @@ def lambda_handler(event, context):
         
         # Process only the new files added (triggered by the event)
         else:
-            for record in event['Records']:
-                s3_object_key = record['s3']['object']['key']
-                if s3_object_key[-4:] != 'json':
-                    logger.error(f"File is not a valid json file")
-                else:
-                    process_file(client, s3_object_key)
+            
+            s3_object_key = event['Records'][0]['s3']['object']['key']
+            print("event triggered by s3 key:", s3_object_key)
+            if s3_object_key[-4:] != 'json':
+                logger.error(f"File is not a valid json file")
+            else:
+                process_file(client, s3_object_key)
 
     except KeyError as k:
         logger.error(f"Error retrieving data, {k}")
