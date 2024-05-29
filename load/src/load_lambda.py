@@ -11,32 +11,25 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# SECRET_NAME = "dw_creds"
-# REGION_NAME = "eu-west-2"
+SECRET_NAME = "dw_creds"
+REGION_NAME = "eu-west-2"
 PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
 
-# # Create a Secrets Manager client
-# def get_dw_creds(secret, region):
+# Create a Secrets Manager client
+def get_dw_creds(secret, region):
 
-#     session = boto3.session.Session()
-#     client = session.client(service_name="secretsmanager", region_name=region)
+    session = boto3.session.Session()
+    client = session.client(service_name="secretsmanager", region_name=region)
 
-#     try:
-#         get_secret_value_response = client.get_secret_value(SecretId=secret)
-#         secret_value = json.loads(get_secret_value_response["SecretString"])
-#         return secret_value
-#     except ClientError as e:
-#         logger.error("Invalid secret name")
+    try:
+        get_secret_value_response = client.get_secret_value(SecretId=secret)
+        secret_value = json.loads(get_secret_value_response["SecretString"])
+        return secret_value
+    except ClientError as e:
+        logger.error("Invalid secret name")
 
-# DW_CREDS = get_dw_creds(secret=SECRET_NAME, region=REGION_NAME)
+DW_CREDS = get_dw_creds(secret=SECRET_NAME, region=REGION_NAME)
 
-DW_CREDS = {
-    "database": os.environ["DATABASE"],
-    "user": os.environ["USERNAME"],
-    "password": os.environ["PASSWORD"],
-    "host": os.environ["HOST"],
-    "port": os.environ["PORT"]
-}
 
 # Connects to the totesys database using environment variables for credentials
 def connect_to_db():
@@ -59,21 +52,16 @@ def connect_to_db():
                 conn_attempts += 1
         logger.error(f"Unable to connect to database")
 
-# Read in parquet files (AWS Wrangler? or URLLIB?)
 
+# check data in data warehouse
+def check_exist_data():
+    pass
 
-# Convert to JSON
+# Read in parquet files -AWS Wrangler
+# write data to data warehouse
+def get_file_and_write_to_db(table_name,object_key):
+    pass
 
-# Secrets Manager for Data warehouse access
-
-# Use someone's local psql account for initial testing
-
-# Create initial schema
-
-# Read JSON files into python objects
-
-
-# Load python objects to psql (PG8000)
 
 def lambda_handler(event, context):
     print(event)
