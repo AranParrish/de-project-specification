@@ -114,6 +114,7 @@ def conversion_for_fact_sales_order(sales_order_df):
     df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
     df.agreed_delivery_date = df.agreed_delivery_date.astype("datetime64[ns]")
 
+    df['sales_record_id'] = [i for i in range(len(df))]
     df['created_date'] = df['created_at'].dt.date.astype("datetime64[ns]")
     df['created_time'] = df['created_at'].dt.time
     df['last_updated_date'] = df['last_updated'].dt.date.astype("datetime64[ns]")
