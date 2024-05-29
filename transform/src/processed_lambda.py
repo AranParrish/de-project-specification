@@ -11,6 +11,7 @@ INGESTION_ZONE_BUCKET = os.environ["ingestion_zone_bucket"]
 PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
 department_df = ""
 address_df = ""
+date_df = ""
 
 
 def conversion_for_dim_location(df):
@@ -83,11 +84,13 @@ def conversion_for_dim_staff(dep_df, staff_df):
     return df
 
 
-def date_helper(date_df, column):
+def date_helper():
     """
-    This function takes in a date dataframe and creates the columns needed for the dim_date table
+    This function generates dates for 3 years
+    returns:
+    a dataframe
     """
-    date_df = pd.date_range('2022-11-01', '2024-12-31', freq='D').to_frame()
+    date_df = pd.date_range('2022-01-01', '2024-12-31', freq='D').to_frame()
     date_df['year'] = date_df[0].dt.year
     date_df['month'] = date_df[0].dt.month
     date_df['day'] = date_df[0].dt.day
@@ -96,64 +99,52 @@ def date_helper(date_df, column):
     date_df['month_name'] = date_df[0].dt.month_name()
     date_df['quarter'] = date_df[0].dt.quarter
     date_df.rename(columns={0: "date_id"}, inplace = True)
-    print(date_df.head())
- 
-    with pd.option_context('mode.chained_assignment', None):
-        date_df['date_id'] = date_df[column].dt.date
-        date_df['year'] = date_df[column].dt.year
-        date_df['month'] = date_df[column].dt.month
-        date_df['day'] = date_df[column].dt.day
-        date_df['day_of_week'] = date_df[column].dt.dayofweek
-        date_df['day_name'] = date_df[column].dt.day_name()
-        date_df['month_name'] = date_df[column].dt.month_name()
-        date_df['quarter'] = date_df[column].dt.quarter
 
-    date_df = date_df.drop(column, axis = 1)
     date_df = date_df.convert_dtypes()
     
     return date_df
 
 
-def conversion_for_dim_date(sales_order_df):
-    """
-    This function takes in a sales_order dataframe and creates dataframes from the date columns
-    It calls the function above and combines all rows while removing duplicates
-    The output matches the requirements of the dim_date table
-    """
-    df = sales_order_df.copy()
-    created_at_df = df[["created_at"]]
-    created_at_df.created_at = created_at_df.created_at.astype("datetime64[ns]")
-    created_date_df = date_helper(created_at_df, "created_at")
+# def conversion_for_dim_date(sales_order_df):
+#     """
+#     This function takes in a sales_order dataframe and creates dataframes from the date columns
+#     It calls the function above and combines all rows while removing duplicates
+#     The output matches the requirements of the dim_date table
+#     """
+#     df = sales_order_df.copy()
+#     created_at_df = df[["created_at"]]
+#     created_at_df.created_at = created_at_df.created_at.astype("datetime64[ns]")
+#     created_date_df = date_helper(created_at_df, "created_at")
 
-    last_updated_date_df = df[["last_updated"]]
-    last_updated_date_df.last_updated = last_updated_date_df.last_updated.astype(
-        "datetime64[ns]"
-    )
-    last_updated_date_df = date_helper(last_updated_date_df, "last_updated")
+#     last_updated_date_df = df[["last_updated"]]
+#     last_updated_date_df.last_updated = last_updated_date_df.last_updated.astype(
+#         "datetime64[ns]"
+#     )
+#     last_updated_date_df = date_helper(last_updated_date_df, "last_updated")
 
-    agreed_payment_date_df = df[["agreed_payment_date"]]
-    agreed_payment_date_df.agreed_payment_date = (
-        agreed_payment_date_df.agreed_payment_date.astype("datetime64[ns]")
-    )
-    agreed_payment_date_df = date_helper(agreed_payment_date_df, "agreed_payment_date")
+#     agreed_payment_date_df = df[["agreed_payment_date"]]
+#     agreed_payment_date_df.agreed_payment_date = (
+#         agreed_payment_date_df.agreed_payment_date.astype("datetime64[ns]")
+#     )
+#     agreed_payment_date_df = date_helper(agreed_payment_date_df, "agreed_payment_date")
 
-    agreed_delivery_date_df = df[["agreed_delivery_date"]]
-    agreed_delivery_date_df.agreed_delivery_date = (
-        agreed_delivery_date_df.agreed_delivery_date.astype("datetime64[ns]")
-    )
-    agreed_delivery_date_df = date_helper(
-        agreed_delivery_date_df, "agreed_delivery_date"
-    )
-    frames = [
-        created_date_df,
-        last_updated_date_df,
-        agreed_payment_date_df,
-        agreed_delivery_date_df,
-    ]
-    dim_date_df = pd.concat(frames)
-    dim_date_df = dim_date_df.drop_duplicates()
+#     agreed_delivery_date_df = df[["agreed_delivery_date"]]
+#     agreed_delivery_date_df.agreed_delivery_date = (
+#         agreed_delivery_date_df.agreed_delivery_date.astype("datetime64[ns]")
+#     )
+#     agreed_delivery_date_df = date_helper(
+#         agreed_delivery_date_df, "agreed_delivery_date"
+#     )
+#     frames = [
+#         created_date_df,
+#         last_updated_date_df,
+#         agreed_payment_date_df,
+#         agreed_delivery_date_df,
+#     ]
+#     dim_date_df = pd.concat(frames)
+#     dim_date_df = dim_date_df.drop_duplicates()
 
-    return  dim_date_df
+#     return  dim_date_df
 
 
 def conversion_for_fact_sales_order(sales_order_df):
@@ -183,7 +174,7 @@ def process_file(client, key_name):
     pattern = re.compile(r"(['/'])(\w+)")
     match = pattern.search(key_name)
     table_name = match.group(2)
-    global department_df, address_df
+    global department_df, address_df, date_df
     # Retrieve JSON data from S3
     resp = client.get_object(Bucket = INGESTION_ZONE_BUCKET, Key= key_name)
     file_content = resp['Body'].read().decode('utf-8')
@@ -196,9 +187,10 @@ def process_file(client, key_name):
         df = conversion_for_fact_sales_order(sales_df)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
 
-        df = conversion_for_dim_date(sales_df)
+    elif isinstance(date_df, str):
+        date_df = date_helper()
         new_file_name = re.sub(table_name, f'dim_date', key_name)
-        wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+        wr.s3.to_parquet(df=date_df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
 
             
     elif "address" in key_name:
@@ -238,16 +230,14 @@ def process_file(client, key_name):
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
 
     else:
-        print("No match found.")
+        logger.info(f"No match found for {table_name}.")
 
 
 def lambda_handler(event, context):
     
     try:
         client = boto3.client("s3")
-        department_df = ""
-        address_df = ""
-
+       
         if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
             ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
 
