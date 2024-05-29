@@ -69,13 +69,17 @@ def get_file_and_write_to_db(table_name, object_key):
         df = wr.s3.read_parquet(path=f's3://{PROCESSED_ZONE_BUCKET}/{object_key}')
         print(f"Successfully read parquet file to dataframe")
         # write data to warehouse
-        conn = connect_to_db()
+        # conn = connect_to_db()
         wr.postgresql.to_sql(
             df=df,
             table=table_name,
             schema=DW_CREDS["schema"],
             mode='append',
-            con=conn.connect()
+            con=Connection(user=DW_CREDS['user'],
+                                password=DW_CREDS['password'],
+                                port=DW_CREDS['port'],
+                                host=DW_CREDS['host'],
+                                database=DW_CREDS['database'])
         )
         print("Succesfully written to data warehouse")
     except DatabaseError:
