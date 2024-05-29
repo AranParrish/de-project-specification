@@ -86,21 +86,22 @@ def get_file_and_write_to_db(table_name, object_key):
 def lambda_handler(event, context):
     try:
         client = boto3.client('s3')
-        pattern = re.compile(r"(['/'])([a-z-]+)")
+        pattern = re.compile(r"(['/'])([a-z_]+)")
         print(f'Event >>> {event}')
         # if event['Records'][0]['s3']['bucket']['name'] == PROCESSED_ZONE_BUCKET:
         if 'Records' in event.keys():
             key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
             match = pattern.search(key)
-            table_name = match.group(2)[:-1]
+            table_name = match.group(2)
             get_file_and_write_to_db(table_name=table_name, object_key=key)
         else:
             # insert all the files in processed bucket
             response = client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)
-            print(f'Response >>> {response}')
-            for key in response['Contents']['Key']:
+            print(f'Response >>> {response['Contents']}')
+            for bucket_key in response['Contents']:
+                key = bucket_key['Key']
                 match = pattern.search(key)
-                table_name = match.group(2)[:-1]
+                table_name = match.group(2)
                 get_file_and_write_to_db(table_name=table_name, object_key= key)
     
     except KeyError as k:
