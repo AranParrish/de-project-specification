@@ -303,7 +303,7 @@ class TestProcessFile:
             s3.put_object(
                 Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/address-15_36_42.731009.json"
             )
-            lambda_handler({}, None)
+     
         with patch("transform.src.processed_lambda.conversion_for_dim_location") as mock_func:
             process_file(s3, "2024-05-21/address-15_36_42.731009.json")
         assert mock_func.called

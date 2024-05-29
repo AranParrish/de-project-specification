@@ -21,7 +21,6 @@ def conversion_for_dim_location(df):
     df = df.drop(["created_at", "last_updated"], axis=1)
     df.rename(columns={"address_id": "location_id"}, inplace=True)
     df = df.convert_dtypes()
-
     return  df
 
 
@@ -105,48 +104,6 @@ def date_helper():
     return date_df
 
 
-# def conversion_for_dim_date(sales_order_df):
-#     """
-#     This function takes in a sales_order dataframe and creates dataframes from the date columns
-#     It calls the function above and combines all rows while removing duplicates
-#     The output matches the requirements of the dim_date table
-#     """
-#     df = sales_order_df.copy()
-#     created_at_df = df[["created_at"]]
-#     created_at_df.created_at = created_at_df.created_at.astype("datetime64[ns]")
-#     created_date_df = date_helper(created_at_df, "created_at")
-
-#     last_updated_date_df = df[["last_updated"]]
-#     last_updated_date_df.last_updated = last_updated_date_df.last_updated.astype(
-#         "datetime64[ns]"
-#     )
-#     last_updated_date_df = date_helper(last_updated_date_df, "last_updated")
-
-#     agreed_payment_date_df = df[["agreed_payment_date"]]
-#     agreed_payment_date_df.agreed_payment_date = (
-#         agreed_payment_date_df.agreed_payment_date.astype("datetime64[ns]")
-#     )
-#     agreed_payment_date_df = date_helper(agreed_payment_date_df, "agreed_payment_date")
-
-#     agreed_delivery_date_df = df[["agreed_delivery_date"]]
-#     agreed_delivery_date_df.agreed_delivery_date = (
-#         agreed_delivery_date_df.agreed_delivery_date.astype("datetime64[ns]")
-#     )
-#     agreed_delivery_date_df = date_helper(
-#         agreed_delivery_date_df, "agreed_delivery_date"
-#     )
-#     frames = [
-#         created_date_df,
-#         last_updated_date_df,
-#         agreed_payment_date_df,
-#         agreed_delivery_date_df,
-#     ]
-#     dim_date_df = pd.concat(frames)
-#     dim_date_df = dim_date_df.drop_duplicates()
-
-#     return  dim_date_df
-
-
 def conversion_for_fact_sales_order(sales_order_df):
     """
     This function takes in a sales_order dataframe and restructures it to match the fact_sales_order table
@@ -186,13 +143,7 @@ def process_file(client, key_name):
         new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
         df = conversion_for_fact_sales_order(sales_df)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
-
-    elif isinstance(date_df, str):
-        date_df = date_helper()
-        new_file_name = re.sub(table_name, f'dim_date', key_name)
-        wr.s3.to_parquet(df=date_df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
-
-            
+               
     elif "address" in key_name:
         df = pd.DataFrame(data, index= [i for i in range(len(data))])
         address_df = df.copy()
@@ -228,7 +179,11 @@ def process_file(client, key_name):
         df = conversion_for_dim_currency(currency_df)
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
-
+    
+    elif isinstance(date_df, str):
+        date_df = date_helper()
+        new_file_name = re.sub(table_name, f'dim_date', key_name)
+        wr.s3.to_parquet(df=date_df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
     else:
         logger.info(f"No match found for {table_name}.")
 
