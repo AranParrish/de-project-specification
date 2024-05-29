@@ -85,7 +85,8 @@ def lambda_handler(event, context):
     try:
         client = boto3.client('s3')
         pattern = re.compile(r"(['/'])([a-z-]+)")
-        if event['Records'][0]['s3']['bucket']['name'] == PROCESSED_ZONE_BUCKET:
+        # if event['Records'][0]['s3']['bucket']['name'] == PROCESSED_ZONE_BUCKET:
+        if event:
             key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
             match = pattern.search(key)
             table_name = match.group(2)[:-1]
