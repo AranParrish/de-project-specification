@@ -1,12 +1,9 @@
 import pandas as pd
-import logging, boto3, os, json, urllib
+import logging, boto3, os, json
 import awswrangler as wr
 from pg8000.native import Connection, DatabaseError, InterfaceError
 from botocore.exceptions import ClientError
-# Load local DB credentials for initial testing purposes
-from dotenv import load_dotenv
 from time import sleep
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -37,7 +34,11 @@ def connect_to_db():
     conn_attempts = 0
     try:
         conn_attempts += 1
-        conn = Connection(**DW_CREDS)
+        conn = Connection(user=DW_CREDS['user'],
+                          password=DW_CREDS['password'],
+                          port=DW_CREDS['port'],
+                          host=DW_CREDS['host'],
+                          database=DW_CREDS['database'])
         return conn
     except DatabaseError as exc:
         logger.error(f"Database error: {str(exc)}")
@@ -46,7 +47,11 @@ def connect_to_db():
             try:
                 logger.error(f"Connection failed, waiting 10 seconds and retrying")
                 sleep(1)
-                conn = Connection(**DW_CREDS)
+                conn = Connection(user=DW_CREDS['user'],
+                                password=DW_CREDS['password'],
+                                port=DW_CREDS['port'],
+                                host=DW_CREDS['host'],
+                                database=DW_CREDS['database'])
                 return conn
             except:
                 conn_attempts += 1
@@ -62,6 +67,7 @@ def check_exist_data(table_name):
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
 def get_file_and_write_to_db(table_name, object_key):
+    con = None
     try:
         # read parquet data from s3 
         df = wr.s3.read_parquet(path=f's3://{PROCESSED_ZONE_BUCKET}/{object_key}')
@@ -76,7 +82,8 @@ def get_file_and_write_to_db(table_name, object_key):
     except Exception:
         logger.error("ERROR")
     finally:
-        con.close()
+        if con:
+            con.close()
 
 
 def lambda_handler(event, context):
