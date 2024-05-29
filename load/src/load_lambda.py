@@ -1,7 +1,8 @@
 import pandas as pd
 import logging, boto3, os, json, urllib, re
 import awswrangler as wr
-from pg8000.native import Connection, DatabaseError, InterfaceError
+# from pg8000.native import Connection, DatabaseError, InterfaceError
+from pg8000.dbapi import connect, DatabaseError, InterfaceError
 from botocore.exceptions import ClientError
 from time import sleep
 
@@ -35,7 +36,7 @@ def connect_to_db():
     conn_attempts = 0
     try:
         conn_attempts += 1
-        conn = Connection(user=DW_CREDS['user'],
+        conn = connect(user=DW_CREDS['user'],
                           password=DW_CREDS['password'],
                           port=DW_CREDS['port'],
                           host=DW_CREDS['host'],
@@ -48,7 +49,7 @@ def connect_to_db():
             try:
                 logger.error(f"Connection failed, waiting 10 seconds and retrying")
                 sleep(1)
-                conn = Connection(user=DW_CREDS['user'],
+                conn = connect(user=DW_CREDS['user'],
                                 password=DW_CREDS['password'],
                                 port=DW_CREDS['port'],
                                 host=DW_CREDS['host'],
@@ -62,24 +63,20 @@ def connect_to_db():
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
 def get_file_and_write_to_db(table_name, object_key):
-    con = None
+    conn = None
     try:
         print(f"Executing read/write for table {table_name} with key {object_key}")
         # read parquet data from s3 
         df = wr.s3.read_parquet(path=f's3://{PROCESSED_ZONE_BUCKET}/{object_key}')
         print(f"Successfully read parquet file to dataframe")
         # write data to warehouse
-        # conn = connect_to_db()
+        conn = connect_to_db()
         wr.postgresql.to_sql(
             df=df,
             table=table_name,
             schema=DW_CREDS["schema"],
             mode='append',
-            con=Connection(user=DW_CREDS['user'],
-                                password=DW_CREDS['password'],
-                                port=DW_CREDS['port'],
-                                host=DW_CREDS['host'],
-                                database=DW_CREDS['database'])
+            con=conn
         )
         print("Succesfully written to data warehouse")
     except DatabaseError:
@@ -87,8 +84,8 @@ def get_file_and_write_to_db(table_name, object_key):
     except Exception as e:
         logger.error(f"ERROR: {e}")
     finally:
-        if con:
-            con.close()
+        if conn:
+            conn.close()
 
 
 def lambda_handler(event, context):
