@@ -1,5 +1,5 @@
 import pandas as pd
-import logging, boto3, os, json, urllib
+import logging, boto3, os, json, urllib, re
 import awswrangler as wr
 from pg8000.native import Connection, DatabaseError, InterfaceError
 from botocore.exceptions import ClientError
@@ -64,4 +64,18 @@ def get_file_and_write_to_db(table_name,object_key):
 
 
 def lambda_handler(event, context):
-    print(event)
+    try:
+        client = boto3.client('s3')
+        
+        if event['Records'][0]['s3']['bucket']['name'] == PROCESSED_ZONE_BUCKET:
+            print("execute the utils")
+        else:
+            # insert all the files in processed bucket
+            pattern = re.compile(r"(['/'])(\w+)")
+            response = client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)
+            for key in response['Contents']['Key']:
+                pass
+    
+    except:
+        pass    
+    
