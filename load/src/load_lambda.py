@@ -1,7 +1,7 @@
 import pandas as pd
 import logging, boto3, os, json
 import awswrangler as wr
-from pg8000.native import Connection, DatabaseError, InterfaceError
+from pg8000.native import Connection, DatabaseError, InterfaceError, identifier
 from botocore.exceptions import ClientError
 from time import sleep
 
@@ -27,8 +27,7 @@ def get_dw_creds(secret, region):
 
 DW_CREDS = get_dw_creds(secret=SECRET_NAME, region=REGION_NAME)
 
-
-# Connects to the totesys database using environment variables for credentials
+# Connects to the data warehouse using secrets manager credentials
 def connect_to_db():
     """This function will connect to the totesys database and return the connection"""
     conn_attempts = 0
@@ -61,7 +60,11 @@ def connect_to_db():
 # check data in data warehouse
 def check_exist_data(table_name):
     con = connect_to_db()
-    pass
+    query = con.run(f"SELECT * FROM {identifier(DW_CREDS['schema'])}.{identifier(table_name)}")
+    if len(query) == 0:
+        return False
+    else: 
+        return True
 
 
 # Read in parquet files -AWS Wrangler
