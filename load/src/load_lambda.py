@@ -67,17 +67,21 @@ def get_file_and_write_to_db(table_name, object_key):
         print(f"Executing read/write for table {table_name} with key {object_key}")
         # read parquet data from s3 
         df = wr.s3.read_parquet(path=f's3://{PROCESSED_ZONE_BUCKET}/{object_key}')
+        print(f"Successfully read parquet file to dataframe")
         # write data to warehouse
         con = connect_to_db()
         wr.postgresql.to_sql(
             df=df,
             table=table_name,
             schema=DW_CREDS["schema"],
-            mode="append"
+            mode='append',
+            con=con
         )
         print("Succesfully written to data warehouse")
-    except Exception:
-        logger.error("ERROR")
+    except DatabaseError:
+        logger.error("PG8000 database error")
+    except Exception as e:
+        logger.error(f"ERROR: {e}")
     finally:
         if con:
             con.close()
