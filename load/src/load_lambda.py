@@ -2,7 +2,7 @@ import pandas as pd
 import logging, boto3, os, json, urllib, re
 import awswrangler as wr
 # from pg8000.native import Connection, DatabaseError, InterfaceError
-from pg8000.dbapi import connect, DatabaseError, InterfaceError
+from pg8000 import connect, DatabaseError, InterfaceError
 from botocore.exceptions import ClientError
 from time import sleep
 
@@ -13,6 +13,7 @@ logger.setLevel(logging.INFO)
 SECRET_NAME = "dw_creds"
 REGION_NAME = "eu-west-2"
 PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
+# PROCESSED_ZONE_BUCKET = ""
 
 # Create a Secrets Manager client
 def get_dw_creds(secret, region):
@@ -41,6 +42,7 @@ def connect_to_db():
                           port=DW_CREDS['port'],
                           host=DW_CREDS['host'],
                           database=DW_CREDS['database'])
+        print(type(conn))
         return conn
     except DatabaseError as exc:
         logger.error(f"Database error: {str(exc)}")
@@ -102,7 +104,7 @@ def lambda_handler(event, context):
         else:
             # insert all the files in processed bucket
             response = client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)
-            print(f'Response >>> {response['Contents']}')
+            print(f'Response >>> {response["Contents"]}')
             for bucket_key in response['Contents']:
                 key = bucket_key['Key']
                 match = pattern.search(key)
@@ -122,5 +124,4 @@ def lambda_handler(event, context):
         logger.error(f'Unable to decode the file: {e}')
     except Exception as e:
         logger.error(e)
-        raise RuntimeError  
-    
+        raise RuntimeError
