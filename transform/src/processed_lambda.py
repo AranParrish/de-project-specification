@@ -182,7 +182,7 @@ def process_file(client, key_name):
         
     if "sales_order" in key_name:
         # Convert JSON data to DataFrame
-        sales_df = pd.DataFrame(data)
+        sales_df = pd.DataFrame(data, index= [i for i in range(len(data))])
         new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
         df = conversion_for_fact_sales_order(sales_df)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
@@ -194,7 +194,7 @@ def process_file(client, key_name):
 
             
     elif "address" in key_name:
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data, index= [i for i in range(len(data))])
         address_df = df.copy()
         df = conversion_for_dim_location(df)
         new_file_name = re.sub(table_name, 'dim_location', key_name)
@@ -202,29 +202,29 @@ def process_file(client, key_name):
                         
     elif "counterparty" in key_name:
         if type(address_df) != str:
-            counterparty_df = pd.DataFrame(data)
+            counterparty_df = pd.DataFrame(data, index= [i for i in range(len(data))])
             df = conversion_for_dim_counterparty(address_df, counterparty_df)
             new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
     
     elif "department" in key_name:
-        department_df = pd.DataFrame(data)
+        department_df = pd.DataFrame(data, index= [i for i in range(len(data))])
 
     elif "staff" in key_name:
         if type(department_df) != str:
-            staff_df = pd.DataFrame(data)
+            staff_df = pd.DataFrame(data, index= [i for i in range(len(data))])
             df = conversion_for_dim_staff(department_df, staff_df)
             new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
             wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
 
     elif "design" in key_name:
-        design_df = pd.DataFrame(data)
+        design_df = pd.DataFrame(data, index= [i for i in range(len(data))])
         df = conversion_for_dim_design(design_df)
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
     
     elif "currency" in key_name:
-        currency_df = pd.DataFrame(data)
+        currency_df = pd.DataFrame(data, index= [i for i in range(len(data))])
         df = conversion_for_dim_currency(currency_df)
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
@@ -246,9 +246,8 @@ def lambda_handler(event, context):
         
         # Process only the new files added (triggered by the event)
         else:
-            print("event:", event)
             s3_object_key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-            print("event triggered by s3 key:", s3_object_key)
+            
             if s3_object_key[-4:] != 'json':
                 logger.error(f"File is not a valid json file")
             else:

@@ -467,7 +467,6 @@ class TestLambdaEventTrigger:
         lambda_handler(valid_event, {})
         response = s3.list_objects_v2(Bucket="test_processed_bucket")
         assert response["KeyCount"] == 2
-        print("this is response[con]", response['Contents'])
         assert response['Contents'][0]['Key'] == '2024-05-21/fact_sales_order-15_36_42.731009.parquet'
 
     @pytest.mark.it("lambda throws logs message if is not valid json type")
