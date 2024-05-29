@@ -75,24 +75,12 @@ resource "aws_lambda_function" "processed_lambda" {
   }
 }
 
-# # Manages Lambda layers to include dependencies
-# resource "aws_lambda_layer_version" "python_dotenv_layer" {
-#   layer_name = "python_dotenv_layer"
-#   filename = data.archive_file.layer.output_path
-  
-# }
 
 data "archive_file" "processed_lambda_zip" {
   type        = "zip"
   source_file = "${path.module}/../transform/src/processed_lambda.py"
   output_path = "${path.module}/../transform/processed_lambda.zip"
 }
-
-# data "archive_file" "layer" {
-#   type = "zip"
-#   source_dir = "${path.module}/../transform/layer/"
-#   output_path = "${path.module}/../transform/layer.zip"
-# }
 
 
 # For data warehouse
@@ -104,10 +92,10 @@ resource "aws_lambda_function" "load_lambda" {
     role = aws_iam_role.load_lambda_role.arn 
     filename=data.archive_file.load_lambda_zip.output_path 
     source_code_hash = data.archive_file.load_lambda_zip.output_base64sha256
-    layers = ["arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python312:8"]
+    layers = ["arn:aws:lambda:eu-west-2:336392948345:layer:AWSSDKPandas-Python312:8", aws_lambda_layer_version.python_dotenv_layer.arn]
     handler = "load_lambda.lambda_handler" 
     runtime = "python3.12"
-    timeout = 300
+    timeout = 900
 
 # Add dependencies for load lambda s3 access, cloudwatch access, and secrets manager access
     depends_on = [
@@ -124,23 +112,9 @@ resource "aws_lambda_function" "load_lambda" {
   }
 }
 
-# # Manages Lambda layers to include dependencies
-# resource "aws_lambda_layer_version" "python_dotenv_layer" {
-#   layer_name = "python_dotenv_layer"
-#   filename = data.archive_file.layer.output_path
-  
-# }
 
 data "archive_file" "load_lambda_zip" {
   type        = "zip"
   source_file = "${path.module}/../load/src/load_lambda.py"
   output_path = "${path.module}/../load/load_lambda.zip"
 }
-
-# data "archive_file" "layer" {
-#   type = "zip"
-#   source_dir = "${path.module}/../transform/layer/"
-#   output_path = "${path.module}/../transform/layer.zip"
-# }
-
-
