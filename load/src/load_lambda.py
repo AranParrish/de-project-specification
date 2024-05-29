@@ -78,7 +78,17 @@ def get_file_and_write_to_db(table_name, object_key):
             table=table_name,
             schema=DW_CREDS["schema"],
             mode='append',
-            con=conn
+            con=conn,
+            dtype={
+                "date_id": "DATE",
+                "year": "INTEGER",
+                "month": "INTEGER",
+                "day": "INTEGER",
+                "day_of_week": "INTEGER",
+                "day_name": "TEXT",
+                "month_name": "TEXT",
+                "quarter": "INTEGER"
+            }
         )
         print("Succesfully written to data warehouse")
     except DatabaseError:

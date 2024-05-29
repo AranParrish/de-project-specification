@@ -98,6 +98,7 @@ def date_helper():
     date_df['month_name'] = date_df[0].dt.month_name()
     date_df['quarter'] = date_df[0].dt.quarter
     date_df.rename(columns={0: "date_id"}, inplace = True)
+    date_df['date_id'] = pd.to_datetime(date_df['date_id'])
 
     date_df = date_df.convert_dtypes()
     
