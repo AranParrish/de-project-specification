@@ -114,16 +114,15 @@ def conversion_for_fact_sales_order(sales_order_df):
     df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
     df.agreed_delivery_date = df.agreed_delivery_date.astype("datetime64[ns]")
 
-    df['created_date'] = df['created_at'].dt.date
+    df['created_date'] = df['created_at'].dt.date.astype("datetime64[ns]")
     df['created_time'] = df['created_at'].dt.time
-    df['last_updated_date'] = df['last_updated'].dt.date
+    df['last_updated_date'] = df['last_updated'].dt.date.astype("datetime64[ns]")
     df['last_updated_time'] = df['last_updated'].dt.time
-    df['agreed_payment_date'] = df['agreed_payment_date'].dt.date
-    df['agreed_delivery_date'] = df['agreed_delivery_date'].dt.date
+    df['agreed_payment_date'] = df['agreed_payment_date'].dt.date.astype("datetime64[ns]")
+    df['agreed_delivery_date'] = df['agreed_delivery_date'].dt.date.astype("datetime64[ns]")
 
     df.drop(["created_at", "last_updated"], axis=1, inplace=True)
     df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
- 
     return df
 
 
