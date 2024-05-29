@@ -3,10 +3,8 @@ import logging, boto3, os, json, urllib, re
 import awswrangler as wr
 from pg8000.native import Connection, DatabaseError, InterfaceError
 from botocore.exceptions import ClientError
-# Load local DB credentials for initial testing purposes
-from dotenv import load_dotenv
 from time import sleep
-load_dotenv()
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -59,23 +57,52 @@ def check_exist_data():
 
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
-def get_file_and_write_to_db(table_name,object_key):
-    pass
-
+def get_file_and_write_to_db(table_name, object_key):
+    try:
+        # read parquet data from s3 
+        df = wr.s3.read_parquet(path=f's3://{PROCESSED_ZONE_BUCKET}/{object_key}')
+        # write data to warehouse
+        con = connect_to_db()
+        wr.postgresql.to_sql(
+            df=df,
+            table=table_name,
+            schema=DW_CREDS["schema"],
+            mode="append"
+        )
+    except Exception:
+        logger.error("ERROR")
+    finally:
+        con.close()
 
 def lambda_handler(event, context):
     try:
         client = boto3.client('s3')
-        
+        pattern = re.compile(r"(['/'])(\w+)")
         if event['Records'][0]['s3']['bucket']['name'] == PROCESSED_ZONE_BUCKET:
-            print("execute the utils")
+            key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+            match = pattern.search(key)
+            table_name = match.group(2)
+            get_file_and_write_to_db(table_name=table_name, object_key=key)
         else:
             # insert all the files in processed bucket
-            pattern = re.compile(r"(['/'])(\w+)")
             response = client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)
             for key in response['Contents']['Key']:
-                pass
+                match = pattern.search(key)
+                table_name = match.group(2)
+                get_file_and_write_to_db(table_name=table_name, object_key= key)
     
-    except:
-        pass    
+    except KeyError as k:
+        logger.error(f"Error retrieving data, {k}")
+    except ClientError as c:
+        if c.response["Error"]["Code"] == "NoSuchKey":
+            logger.error(f"No such key: {c}")
+        elif c.response["Error"]["Code"] == "NoSuchBucket":
+            logger.error(f"No such bucket: {c}")
+        else:
+            logger.error(f"Error InvalidClientTokenId: {c}")
+    except UnicodeDecodeError as e:
+        logger.error(f'Unable to decode the file: {e}')
+    except Exception as e:
+        logger.error(e)
+        raise RuntimeError  
     
