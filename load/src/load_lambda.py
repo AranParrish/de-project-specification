@@ -54,13 +54,29 @@ def connect_to_db():
 
 
 # check data in data warehouse
-def check_exist_data():
+def check_exist_data(table_name):
+    con = connect_to_db()
     pass
+
 
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
-def get_file_and_write_to_db(table_name,object_key):
-    pass
+def get_file_and_write_to_db(table_name, object_key):
+    try:
+        # read parquet data from s3 
+        df = wr.s3.read_parquet(path=f's3://{PROCESSED_ZONE_BUCKET}/{object_key}')
+        # write data to warehouse
+        con = connect_to_db()
+        wr.postgresql.to_sql(
+            df=df,
+            table=table_name,
+            schema=DW_CREDS["schema"],
+            mode="append"
+        )
+    except Exception:
+        logger.error("ERROR")
+    finally:
+        con.close()
 
 
 def lambda_handler(event, context):
