@@ -139,12 +139,6 @@ resource "aws_iam_role_policy_attachment" "load_lambda_cloudwatch_logs_policy" {
   policy_arn = aws_iam_policy.load_cloudwatch_logs_policy.arn
 }
 
-# Attach SNS policy to processed_lambda role
-resource "aws_iam_role_policy_attachment" "load_lambda_role_sns_policy" {
-  role       = aws_iam_role.load_lambda_role.name
-  policy_arn = aws_iam_policy.sns_policy.arn
-}
-
 # Attach Secrets Manager policy to warehouse lambda function role
 resource "aws_iam_role_policy_attachment" "load_lambda_sm_policy_attachment" {
     role = aws_iam_role.load_lambda_role.name
