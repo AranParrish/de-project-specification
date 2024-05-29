@@ -109,18 +109,32 @@ def conversion_for_fact_sales_order(sales_order_df):
     This function takes in a sales_order dataframe and restructures it to match the fact_sales_order table
     """    
     df = sales_order_df.copy()
-    df.created_at = df.created_at.astype("datetime64[ns]")
-    df.last_updated = df.last_updated.astype("datetime64[ns]")
-    df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
-    df.agreed_delivery_date = df.agreed_delivery_date.astype("datetime64[ns]")
+    df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+    df['last_updated'] = pd.to_datetime(df['last_updated'], errors='coerce')
+    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'], errors='coerce')
+    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'], errors='coerce')
 
     df['sales_record_id'] = [i for i in range(len(df))]
-    df['created_date'] = df['created_at'].dt.date.astype("datetime64[ns]")
+    df['created_date'] = pd.to_datetime(df['created_at'].dt.date, errors='coerce')
     df['created_time'] = df['created_at'].dt.time
-    df['last_updated_date'] = df['last_updated'].dt.date.astype("datetime64[ns]")
-    df['last_updated_time'] = df['last_updated'].dt.time
-    df['agreed_payment_date'] = df['agreed_payment_date'].dt.date.astype("datetime64[ns]")
-    df['agreed_delivery_date'] = df['agreed_delivery_date'].dt.date.astype("datetime64[ns]")
+    df['last_updated_date'] = pd.to_datetime(df['last_updated'].dt.date, errors='coerce')  
+    df['last_updated_time'] = df['last_updated'].dt.time  
+    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'].dt.date, errors='coerce')
+    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'].dt.date, errors='coerce')
+
+    # df.created_at = df.created_at.astype("datetime64[ns]")
+    # df.last_updated = df.last_updated.astype("datetime64[ns]")
+    # df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
+    # df.agreed_delivery_date = df.agreed_delivery_date.astype("datetime64[ns]")
+    
+
+    # df['sales_record_id'] = [i for i in range(len(df))]
+    # df['created_date'] = df['created_at'].dt.date.astype("datetime64[ns]")
+    # df['created_time'] = df['created_at'].dt.time
+    # df['last_updated_date'] = df['last_updated'].dt.date.astype("datetime64[ns]")
+    # df['last_updated_time'] = df['last_updated'].dt.time
+    # df['agreed_payment_date'] = df['agreed_payment_date'].dt.date.astype("datetime64[ns]")
+    # df['agreed_delivery_date'] = df['agreed_delivery_date'].dt.date.astype("datetime64[ns]")
 
     df.drop(["created_at", "last_updated"], axis=1, inplace=True)
     df.rename(columns={"staff_id": "sales_staff_id"}, inplace=True)
