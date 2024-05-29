@@ -59,12 +59,6 @@ def connect_to_db():
         logger.error(f"Unable to connect to database")
 
 
-# check data in data warehouse
-def check_exist_data(table_name):
-    con = connect_to_db()
-    pass
-
-
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
 def get_file_and_write_to_db(table_name, object_key):
