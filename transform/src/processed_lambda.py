@@ -208,10 +208,10 @@ def process_file(client, key_name):
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
     
-    elif not check_dim_date_in_bucket():
-        date_df = date_helper()
-        new_file_name = re.sub(table_name, f'dim_date', key_name)
-        wr.s3.to_parquet(df=date_df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
+    # elif not check_dim_date_in_bucket():
+    #     date_df = date_helper()
+    #     new_file_name = re.sub(table_name, f'dim_date', key_name)
+    #     wr.s3.to_parquet(df=date_df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
     else:
         logger.info(f"No match found for {table_name}.")
 
@@ -220,8 +220,8 @@ def lambda_handler(event, context):
     
     try:
         client = boto3.client("s3")
-
-        if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
+        response = client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)
+        if response["KeyCount"] == 0:
             ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
 
             for bucket_key in ingestion_files['Contents']:
@@ -229,6 +229,7 @@ def lambda_handler(event, context):
         
         # Process only the new files added (triggered by the event)
         else:
+            # if response['Contents']
             s3_object_key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
             if s3_object_key[-4:] != 'json':
                 logger.error(f"File is not a valid json file")
