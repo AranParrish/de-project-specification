@@ -11,7 +11,7 @@ INGESTION_ZONE_BUCKET = os.environ["ingestion_zone_bucket"]
 PROCESSED_ZONE_BUCKET = os.environ["processed_data_zone_bucket"]
 department_df = ""
 address_df = ""
-date_df = ""
+
 
 
 def conversion_for_dim_location(df):
@@ -104,59 +104,32 @@ def date_helper():
     
     return date_df
 
-
-# def conversion_for_dim_date(sales_order_df):
-#     """
-#     This function takes in a sales_order dataframe and creates dataframes from the date columns
-#     It calls the function above and combines all rows while removing duplicates
-#     The output matches the requirements of the dim_date table
-#     """
-#     df = sales_order_df.copy()
-#     created_at_df = df[["created_at"]]
-#     created_at_df.created_at = created_at_df.created_at.astype("datetime64[ns]")
-#     created_date_df = date_helper(created_at_df, "created_at")
-
-#     last_updated_date_df = df[["last_updated"]]
-#     last_updated_date_df.last_updated = last_updated_date_df.last_updated.astype(
-#         "datetime64[ns]"
-#     )
-#     last_updated_date_df = date_helper(last_updated_date_df, "last_updated")
-
-#     agreed_payment_date_df = df[["agreed_payment_date"]]
-#     agreed_payment_date_df.agreed_payment_date = (
-#         agreed_payment_date_df.agreed_payment_date.astype("datetime64[ns]")
-#     )
-#     agreed_payment_date_df = date_helper(agreed_payment_date_df, "agreed_payment_date")
-
-#     agreed_delivery_date_df = df[["agreed_delivery_date"]]
-#     agreed_delivery_date_df.agreed_delivery_date = (
-#         agreed_delivery_date_df.agreed_delivery_date.astype("datetime64[ns]")
-#     )
-#     agreed_delivery_date_df = date_helper(
-#         agreed_delivery_date_df, "agreed_delivery_date"
-#     )
-#     frames = [
-#         created_date_df,
-#         last_updated_date_df,
-#         agreed_payment_date_df,
-#         agreed_delivery_date_df,
-#     ]
-#     dim_date_df = pd.concat(frames)
-#     dim_date_df = dim_date_df.drop_duplicates()
-
-#     return  dim_date_df
-
+def check_dim_date_in_bucket():
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(PROCESSED_ZONE_BUCKET)
+    
+    for obj in bucket.objects.all():
+        return 'dim_date' in obj.key
+         
+    return False
 
 def conversion_for_fact_sales_order(sales_order_df):
     """
     This function takes in a sales_order dataframe and restructures it to match the fact_sales_order table
     """    
     df = sales_order_df.copy()
-    df.created_at = df.created_at.astype("datetime64[ns]")
-    df.last_updated = df.last_updated.astype("datetime64[ns]")
-    df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
-    df.agreed_delivery_date = df.agreed_delivery_date.astype("datetime64[ns]")
+  
+    df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+    df['last_updated'] = pd.to_datetime(df['last_updated'], errors='coerce')
+    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'], errors='coerce')
+    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'], errors='coerce')
+    # Drop rows with invalid dates
+    df.dropna(subset=['created_at'], inplace=True)
+    df.dropna(subset=['last_updated'], inplace=True)
+    df.dropna(subset=['agreed_payment_date'], inplace=True)
+    df.dropna(subset=['agreed_delivery_date'], inplace=True)
 
+    
     df['created_date'] = df['created_at'].dt.date
     df['created_time'] = df['created_at'].dt.time
     df['last_updated_date'] = df['last_updated'].dt.date
@@ -174,25 +147,19 @@ def process_file(client, key_name):
     pattern = re.compile(r"(['/'])(\w+)")
     match = pattern.search(key_name)
     table_name = match.group(2)
-    global department_df, address_df, date_df
+    global department_df, address_df
     # Retrieve JSON data from S3
     resp = client.get_object(Bucket = INGESTION_ZONE_BUCKET, Key= key_name)
     file_content = resp['Body'].read().decode('utf-8')
     data = json.loads(file_content)
-        
+     
     if "sales_order" in key_name:
         # Convert JSON data to DataFrame
         sales_df = pd.DataFrame(data)
         new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
         df = conversion_for_fact_sales_order(sales_df)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
-
-    elif isinstance(date_df, str):
-        date_df = date_helper()
-        new_file_name = re.sub(table_name, f'dim_date', key_name)
-        wr.s3.to_parquet(df=date_df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
-
-            
+          
     elif "address" in key_name:
         df = pd.DataFrame(data)
         address_df = df.copy()
@@ -228,7 +195,11 @@ def process_file(client, key_name):
         df = conversion_for_dim_currency(currency_df)
         new_file_name = re.sub(table_name, f'dim_{table_name}', key_name)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')             
-
+    
+    elif not check_dim_date_in_bucket():
+        date_df = date_helper()
+        new_file_name = re.sub(table_name, f'dim_date', key_name)
+        wr.s3.to_parquet(df=date_df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
     else:
         logger.info(f"No match found for {table_name}.")
 
@@ -237,7 +208,7 @@ def lambda_handler(event, context):
     
     try:
         client = boto3.client("s3")
-       
+
         if client.list_objects_v2(Bucket=PROCESSED_ZONE_BUCKET)["KeyCount"] == 0:
             ingestion_files = client.list_objects_v2(Bucket=INGESTION_ZONE_BUCKET)
 
@@ -246,9 +217,7 @@ def lambda_handler(event, context):
         
         # Process only the new files added (triggered by the event)
         else:
-            print("event:", event)
             s3_object_key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
-            print("event triggered by s3 key:", s3_object_key)
             if s3_object_key[-4:] != 'json':
                 logger.error(f"File is not a valid json file")
             else:
