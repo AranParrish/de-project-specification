@@ -61,7 +61,25 @@ def connect_to_db():
                 conn_attempts += 1
         logger.error(f"Unable to connect to database")
 
-
+def assign_dtypes(table_name):
+    if table_name == "fact_sales_order":
+        return {"sales_order_id": int,
+        "created_date": date,
+        "created_time": time,
+        "last_updated_date": date,
+        "last_updated_time": time,
+        "sales_staff_id": int,
+        "counterparty_id": int,
+        "units_sold": int,
+        "unit_price": "numeric(10, 2)",
+        "currency_id": int,
+        "design_id": int,
+        "agreed_payment_date": date,
+        "agreed_delivery_date": date,
+        "agreed_delivery_location_id": int}
+    else:
+        return None
+        
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
 def get_file_and_write_to_db(table_name, object_key):
@@ -79,6 +97,7 @@ def get_file_and_write_to_db(table_name, object_key):
             schema=DW_CREDS["schema"],
             mode='append',
             con=conn
+            dtype = assign_dtypes(table_name)
         )
         print("Succesfully written to data warehouse")
     except DatabaseError as e:
