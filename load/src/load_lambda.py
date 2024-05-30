@@ -79,7 +79,7 @@ def assign_dtypes(table_name):
         "agreed_delivery_location_id": int}
     else:
         return None
-        
+
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
 def get_file_and_write_to_db(table_name, object_key):
@@ -96,7 +96,7 @@ def get_file_and_write_to_db(table_name, object_key):
             table=table_name,
             schema=DW_CREDS["schema"],
             mode='append',
-            con=conn
+            con=conn,
             dtype = assign_dtypes(table_name)
         )
         print("Succesfully written to data warehouse")
