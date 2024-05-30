@@ -491,3 +491,30 @@ class TestLambdaEventTrigger:
         with caplog.at_level(logging.ERROR):
             lambda_handler(invalid_event, {})
         assert "No such bucket" in caplog.text
+        
+@pytest.mark.describe("Test Dim Date")
+class TestCheckDimDate:
+
+    @pytest.mark.it("if there is no  dim date in processed zone bucket then seed the dim date")
+    def test_ingest_dim_date(self, s3, valid_event, test_processed_bucket, test_ingestion_bucket):
+        with open("transform/tests/data/sales_order.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_ingestion_bucket", Key="2024-05-21/payment_order-15_36_42.731009.json"
+            )
+        lambda_handler(valid_event, {})
+        response = s3.list_objects_v2(Bucket="test_processed_bucket")
+        assert response["KeyCount"] == 2
+        assert response['Contents'][0]['Key'] == '2024-05-21/dim_date-15_36_42.731009.parquet'
+        
+    @pytest.mark.it("if there is dim date in processed zone bucket then do not seed the dim date")
+    def test_does_not_ingest_dim_date_when_already_present(self, s3, valid_event, test_processed_bucket, test_ingestion_bucket):
+        with open("transform/tests/data/sales_order.json") as f:
+            text_to_write = f.read()
+            s3.put_object(
+                Body=text_to_write, Bucket="test_processed_bucket", Key="2024-05-21/dim_date-15_36_42.731009.parquet"
+            )
+        lambda_handler(valid_event, {})
+        response = s3.list_objects_v2(Bucket="test_processed_bucket")
+        assert response["KeyCount"] == 2
+        assert response['Contents'][0]['Key'] == '2024-05-21/dim_date-15_36_42.731009.parquet'
