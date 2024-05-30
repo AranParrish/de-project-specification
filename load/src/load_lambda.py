@@ -64,18 +64,18 @@ def connect_to_db():
 def assign_dtypes(table_name):
     if table_name == "fact_sales_order":
         return {"sales_order_id": int,
-        "created_date": date,
-        "created_time": time,
-        "last_updated_date": date,
-        "last_updated_time": time,
+        "created_date": str,
+        "created_time": str,
+        "last_updated_date": str,
+        "last_updated_time": str,
         "sales_staff_id": int,
         "counterparty_id": int,
         "units_sold": int,
         "unit_price": "numeric(10, 2)",
         "currency_id": int,
         "design_id": int,
-        "agreed_payment_date": date,
-        "agreed_delivery_date": date,
+        "agreed_payment_date": str,
+        "agreed_delivery_date": str,
         "agreed_delivery_location_id": int}
     else:
         return None
