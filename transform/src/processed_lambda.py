@@ -118,23 +118,23 @@ def conversion_for_fact_sales_order(sales_order_df):
     """    
     df = sales_order_df.copy()
   
-    df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
-    df['last_updated'] = pd.to_datetime(df['last_updated'], errors='coerce')
-    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'], errors='coerce')
-    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'], errors='coerce')
-    # Drop rows with invalid dates
-    df.dropna(subset=['created_at'], inplace=True)
-    df.dropna(subset=['last_updated'], inplace=True)
-    df.dropna(subset=['agreed_payment_date'], inplace=True)
-    df.dropna(subset=['agreed_delivery_date'], inplace=True)
+    df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce', format='ISO8601')
+    df['last_updated'] = pd.to_datetime(df['last_updated'], errors='coerce', format='ISO8601')
+    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'], errors='coerce', format='ISO8601')
+    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'], errors='coerce', format='ISO8601')
+    # # Drop rows with invalid dates
+    # df.dropna(subset=['created_at'], inplace=True)
+    # df.dropna(subset=['last_updated'], inplace=True)
+    # df.dropna(subset=['agreed_payment_date'], inplace=True)
+    # df.dropna(subset=['agreed_delivery_date'], inplace=True)
 
     
-    df['created_date'] = df['created_at'].dt.date
+    df['created_date'] =  pd.to_datetime(df['created_at'].dt.date, errors='coerce', format='YYYY-MM-DD')
     df['created_time'] = df['created_at'].dt.time
-    df['last_updated_date'] = pd.to_datetime(df['last_updated'].dt.date, errors='coerce')  
+    df['last_updated_date'] = pd.to_datetime(df['last_updated'].dt.date, errors='coerce', format='YYYY-MM-DD')  
     df['last_updated_time'] = df['last_updated'].dt.time  
-    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'].dt.date, errors='coerce')
-    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'].dt.date, errors='coerce')
+    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'].dt.date, errors='coerce', format='YYYY-MM-DD')
+    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'].dt.date, errors='coerce', format='YYYY-MM-DD')
 
     # df.created_at = df.created_at.astype("datetime64[ns]")
     # df.last_updated = df.last_updated.astype("datetime64[ns]")

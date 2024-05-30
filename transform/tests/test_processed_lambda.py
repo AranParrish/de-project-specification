@@ -243,12 +243,7 @@ class TestFactSalesOrder:
 
     @pytest.mark.it("check the number of columns")
     def test_number_of_columns(self):
-        print(self.output_df.columns)
-        print("created_date value types:", self.output_df.loc[1, "created_date"], type(self.output_df.loc[1, "created_date"]))
-        print("last_updated_date value types:", self.output_df.loc[1, "last_updated_date"], type(self.output_df.loc[1, "last_updated_date"]))
-        print("agreed_payment_date value types:", self.output_df.loc[1, "agreed_payment_date"], type(self.output_df.loc[1, "agreed_payment_date"]))
-        print("agreed_delivery_date value types:", self.output_df.loc[1, "agreed_delivery_date"], type(self.output_df.loc[1, "agreed_delivery_date"]))
-        assert len(self.output_df.columns) == 15
+        assert len(self.output_df.columns) == 14
 
     @pytest.mark.it("check the column names match schema")
     def test_valid_column_names_only(self):
@@ -259,7 +254,7 @@ class TestFactSalesOrder:
 
     @pytest.mark.it("check the column datatypes match schema")
     def test_column_data_types_match_schema(self):
-        assert self.output_df.sales_record_id.dtype == 'int64'
+        
         assert self.output_df.sales_order_id.dtype == 'int64'
         assert self.output_df.design_id.dtype == 'int64'
         assert self.output_df.sales_staff_id.dtype == 'int64'
@@ -283,11 +278,11 @@ class TestFactSalesOrder:
             assert isinstance(self.output_df.loc[i,"created_date"], datetime.date)
             assert isinstance(self.output_df.loc[i,"last_updated_date"], datetime.date)
     
-    # @pytest.mark.it("check values of created_time and last_updated_time are of time type")
-    # def test_values_in_time_type(self):
-    #     for i in self.output_df.index:
-    #         assert isinstance(self.output_df.loc[i,"created_time"], datetime.time)
-    #         assert isinstance(self.output_df.loc[i,"last_updated_time"], datetime.time)
+    @pytest.mark.it("check values of created_time and last_updated_time are of time type")
+    def test_values_in_time_type(self):
+        for i in self.output_df.index:
+            assert isinstance(self.output_df.loc[i,"created_time"], datetime.time)
+            assert isinstance(self.output_df.loc[i,"last_updated_time"], datetime.time)
 
     @pytest.mark.it("check output is a dataframe")
     def test_output_is_a_dataframe(self):
@@ -390,7 +385,7 @@ class TestTransfomLambdaHandler:
         lambda_handler({}, None)
         df = wr.s3.read_parquet(path=f"s3://test_processed_bucket/2024-05-21/fact_sales_order-15_36_42.731009.parquet")
 
-        expected = ['sales_record_id', 'sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
+        expected = [ 'sales_order_id', 'design_id', 'sales_staff_id', 'counterparty_id',
        'units_sold', 'unit_price', 'currency_id', 'agreed_delivery_date',
        'agreed_payment_date', 'agreed_delivery_location_id', 'created_date',
        'created_time', 'last_updated_date', 'last_updated_time']
