@@ -81,8 +81,8 @@ def get_file_and_write_to_db(table_name, object_key):
             con=conn
         )
         print("Succesfully written to data warehouse")
-    except DatabaseError:
-        logger.error("PG8000 database error")
+    except DatabaseError as e:
+        logger.error(f"PG8000 database error: {e}")
     except Exception as e:
         logger.error(f"ERROR: {e}")
     finally:
