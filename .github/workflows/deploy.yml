@@ -33,7 +33,7 @@ jobs:
   
   deploy:
     name: deploy
-    #needs: run-all
+    needs: run-all
     environment: dev
     runs-on: ubuntu-latest
     steps:
