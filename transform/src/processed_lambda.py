@@ -117,21 +117,18 @@ def conversion_for_fact_sales_order(sales_order_df):
     This function takes in a sales_order dataframe and restructures it to match the fact_sales_order table
     """    
     df = sales_order_df.copy()
-    df['created_at'] = pd.to_datetime(df['created_at'], format='ISO8601')
-    df['last_updated'] = pd.to_datetime(df['last_updated'], format='ISO8601')
-    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'], format='ISO8601')
-    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'], format='ISO8601')
     
-    # Drop rows with invalid dates
-    df['created_at'] = df['created_at'].dt.strftime('%Y-%m-%dT%H:%M:%S.%f').dropna()
-    df['last_updated'] = df['last_updated'].dt.strftime('%Y-%m-%dT%H:%M:%S.%f').dropna()
-    df['agreed_payment_date'] = df['agreed_payment_date'].dt.strftime('%Y-%m-%dT%H:%M:%S.%f').dropna()
-    df['agreed_delivery_date'] = df['agreed_delivery_date'].dt.strftime('%Y-%m-%dT%H:%M:%S.%f').dropna()
+    df['created_at'] = pd.to_datetime(df['created_at'], errors='coerce')
+    df['last_updated'] = pd.to_datetime(df['last_updated'], errors= 'coerce')
+    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'], errors='coerce')
+    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'], errors='coerce')
+    # df =df[(df.created_at != '%Y-%m-%d %H:%M:%S.%f') & 
+    #        (df.last_updated !=  '%Y-%m-%d %H:%M:%S.%f') & 
+    #        (df.agreed_payment_date != '%Y-%m-%d %H:%M:%S.%f') & 
+    #        (df.agreed_delivery_date !='%Y-%m-%d %H:%M:%S.%f')]
+   
+    df = df.dropna(axis=0, how='any')
     
-    df['created_at'] = pd.to_datetime(df['created_at'], format='ISO8601')
-    df['last_updated'] = pd.to_datetime(df['last_updated'], format='ISO8601')
-    df['agreed_payment_date'] = pd.to_datetime(df['agreed_payment_date'], format='ISO8601')
-    df['agreed_delivery_date'] = pd.to_datetime(df['agreed_delivery_date'], format='ISO8601')
     
     df['created_date'] =  df['created_at'].dt.date
     df['created_time'] = df['created_at'].dt.time
@@ -139,7 +136,8 @@ def conversion_for_fact_sales_order(sales_order_df):
     df['last_updated_time'] = df['last_updated'].dt.time  
     df['agreed_payment_date'] = df['agreed_payment_date'].dt.date
     df['agreed_delivery_date'] = df['agreed_delivery_date'].dt.date
-    print(df.dtypes)
+    
+    
     # df.created_at = df.created_at.astype("datetime64[ns]")
     # df.last_updated = df.last_updated.astype("datetime64[ns]")
     # df.agreed_payment_date = df.agreed_payment_date.astype("datetime64[ns]")
@@ -172,7 +170,6 @@ def process_file(client, key_name):
     if "sales_order" in key_name:
         # Convert JSON data to DataFrame
         sales_df = pd.DataFrame(data, index= [i for i in range(len(data))])
-        sales_df.dropna()
         new_file_name = re.sub(table_name, f'fact_{table_name}', key_name)
         df = conversion_for_fact_sales_order(sales_df)
         wr.s3.to_parquet(df=df, path=f's3://{PROCESSED_ZONE_BUCKET}/{new_file_name[:-5]}.parquet')
