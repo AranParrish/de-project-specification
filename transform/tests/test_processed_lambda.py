@@ -262,12 +262,12 @@ class TestFactSalesOrder:
         assert self.output_df.units_sold.dtype == 'int64'
         assert self.output_df.unit_price .dtype == 'float64'
         assert self.output_df.currency_id.dtype == 'int64'
-        assert self.output_df.agreed_delivery_date.dtype == 'datetime64[ns]'
-        assert self.output_df.agreed_payment_date.dtype == 'datetime64[ns]'
+        assert self.output_df.agreed_delivery_date.dtype == object
+        assert self.output_df.agreed_payment_date.dtype == object
         assert self.output_df.agreed_delivery_location_id.dtype == 'int64'
-        assert self.output_df.created_date.dtype == 'datetime64[ns]'
+        assert self.output_df.created_date.dtype == object
         assert self.output_df.created_time.dtype == object
-        assert self.output_df.last_updated_date.dtype == 'datetime64[ns]'
+        assert self.output_df.last_updated_date.dtype == object
         assert self.output_df.last_updated_time.dtype == object
 
     @pytest.mark.it("check values of agreed_delivery_date, agreed_payment_date, created_date, last_updated_date are of date type")
