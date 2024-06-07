@@ -72,10 +72,12 @@ def read_history_data_from_any_tb(tb_name):
     if tb_name in valid_tb_name:
         conn = connect_to_db()
         history_data = conn.run(f"""SELECT * FROM {tb_name};""")
-        col_headers = [col["name"] for col in conn.columns]
+        col_headers = [col["name"] for col in conn.columns]      
         if len(history_data) == 1:
+            history_data = [i.isoformat(timespec='microseconds') for i in history_data if isinstance(i, datetime)]
             return dict(zip(col_headers, history_data[0]))
         conn.close()
+        history_data = [[i.isoformat(timespec='microseconds') for i in data if isinstance(i, datetime)] for data in history_data]
         return [dict(zip(col_headers, data)) for data in history_data]
     else:
         logger.error(f"{tb_name} is not a valid table name.")
@@ -103,8 +105,10 @@ def read_updates_from_any_tb(tb_name):
         )
         col_headers = [col["name"] for col in conn.columns]
         if len(updates) == 1:
+            updates = [i.isoformat(timespec='microseconds') for i in updates if isinstance(i, datetime)]
             return dict(zip(col_headers, updates[0]))
         conn.close()
+        updates = [[i.isoformat(timespec='microseconds') for i in data if isinstance(i, datetime)] for data in updates]
         return [dict(zip(col_headers, data)) for data in updates]
     else:
         logger.error(f"{tb_name} is not a valid table name.")

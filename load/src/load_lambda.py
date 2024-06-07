@@ -5,6 +5,7 @@ import awswrangler as wr
 from pg8000 import connect, DatabaseError, InterfaceError
 from botocore.exceptions import ClientError
 from time import sleep
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -60,25 +61,6 @@ def connect_to_db():
             except:
                 conn_attempts += 1
         logger.error(f"Unable to connect to database")
-
-# def assign_dtypes(table_name):
-#     if table_name == "fact_sales_order":
-#         return {"sales_order_id": int,
-#         "created_date": str,
-#         "created_time": str,
-#         "last_updated_date": str,
-#         "last_updated_time": str,
-#         "sales_staff_id": int,
-#         "counterparty_id": int,
-#         "units_sold": int,
-#         "unit_price": "numeric(10, 2)",
-#         "currency_id": int,
-#         "design_id": int,
-#         "agreed_payment_date": str,
-#         "agreed_delivery_date": str,
-#         "agreed_delivery_location_id": int}
-#     else:
-#         return None
 
 # Read in parquet files -AWS Wrangler
 # write data to data warehouse
